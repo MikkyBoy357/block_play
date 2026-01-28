@@ -17,6 +17,15 @@ interface Ball {
     rotation: number
 }
 
+interface EmojiFeedback {
+    id: number
+    emoji: string
+    x: number
+    y: number
+    opacity: number
+    createdAt: number
+}
+
 type GameState = "idle" | "playing" | "gameover"
 
 export function FootballTapGame() {
@@ -24,16 +33,28 @@ export function FootballTapGame() {
     const ballRef = useRef<Ball | null>(null)
     const animationRef = useRef<number>(0)
     const lastTimeRef = useRef<number>(0)
+    const backgroundImageRef = useRef<HTMLImageElement | null>(null)
+    const ballImageRef = useRef<HTMLImageElement | null>(null)
 
     const [gameState, setGameState] = useState<GameState>("idle")
     const [score, setScore] = useState(0)
     const [highScore, setHighScore] = useState(0)
     const [soundEnabled, setSoundEnabled] = useState(true)
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
+    const [imagesLoaded, setImagesLoaded] = useState(false)
+    const [gameStarted, setGameStarted] = useState(false)
+    const emojiFeedbackRef = useRef<EmojiFeedback[]>([])
+    const emojiIdRef = useRef(0)
+    const lastInputWasTouchRef = useRef(false)
 
-    const { session, cheatingDetected, startGame, recordAction, endGame } = useGameSession()
+    // Emoji lists
+    const goodEmojis = ['😎', '🤙🏾', '🙌🏾', '🔥', '⚽️', '💪🏾', '🏆', '🥇']
+    const badEmojis = ['🥲', '😭', '😥', '💔', '😔']
+
+    const { session, startGame, recordAction, endGame } = useGameSession()
 
     const audioContextRef = useRef<AudioContext | null>(null)
+    const accumulatorRef = useRef(0)
 
     // Physics constants
     const GRAVITY = 0.4
@@ -100,12 +121,47 @@ export function FootballTapGame() {
         }
     }, [soundEnabled, getAudioContext])
 
+    // Show emoji feedback
+    const showEmojiFeedback = useCallback((emoji: string, x: number, y: number) => {
+        const id = emojiIdRef.current++
+        const newEmoji: EmojiFeedback = {
+            id,
+            emoji,
+            x,
+            y,
+            opacity: 1.0,
+            createdAt: Date.now(),
+        }
+        emojiFeedbackRef.current.push(newEmoji)
+    }, [])
+
+    // Update emoji feedback (fade out)
+    const updateEmojiFeedback = useCallback(() => {
+        const now = Date.now()
+        const arr = emojiFeedbackRef.current
+        for (let i = arr.length - 1; i >= 0; i--) {
+            const e = arr[i]
+            e.opacity = Math.max(0, 1.0 - (now - e.createdAt) / 1000)
+            if (e.opacity <= 0) arr.splice(i, 1)
+        }
+    }, [])
+
     // Handle canvas resize
     useEffect(() => {
         const updateSize = () => {
-            const width = Math.min(window.innerWidth, 500)
-            const height = Math.min(window.innerHeight - 100, 700)
-            setCanvasSize({ width, height })
+            const aspectRatio = 9 / 16 // 9:16 aspect ratio
+            const maxWidth = Math.min(window.innerWidth, 500)
+            const maxHeight = Math.min(window.innerHeight - 100, 700)
+            
+            let width = maxWidth
+            let height = width / aspectRatio
+            
+            if (height > maxHeight) {
+                height = maxHeight
+                width = height * aspectRatio
+            }
+            
+            setCanvasSize({ width: Math.floor(width), height: Math.floor(height) })
         }
 
         updateSize()
@@ -113,69 +169,89 @@ export function FootballTapGame() {
         return () => window.removeEventListener("resize", updateSize)
     }, [])
 
+    // Ensure canvas uses device pixel ratio for stable rendering
+    useEffect(() => {
+        if (!canvasRef.current || canvasSize.width === 0 || canvasSize.height === 0) return
+        const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 1.5)) // cap for performance
+        const canvas = canvasRef.current
+        canvas.width = Math.floor(canvasSize.width * dpr)
+        canvas.height = Math.floor(canvasSize.height * dpr)
+        canvas.style.width = `${canvasSize.width}px`
+        canvas.style.height = `${canvasSize.height}px`
+        const ctx = canvas.getContext('2d')
+        if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }, [canvasSize])
+
     // Load high score from localStorage (this is just for display, actual scores are server-validated)
     useEffect(() => {
         const saved = localStorage.getItem("footballTap_highScore")
         if (saved) setHighScore(parseInt(saved, 10))
     }, [])
 
+    // Load images
+    useEffect(() => {
+        const loadImages = async () => {
+            const backgroundImg = new Image()
+            const ballImg = new Image()
+            
+            backgroundImg.src = '/football/images/background.jpg'
+            ballImg.src = '/football/images/ball.png'
+            
+            await Promise.all([
+                new Promise((resolve) => {
+                    backgroundImg.onload = resolve
+                }),
+                new Promise((resolve) => {
+                    ballImg.onload = resolve
+                })
+            ])
+            
+            backgroundImageRef.current = backgroundImg
+            ballImageRef.current = ballImg
+            setImagesLoaded(true)
+        }
+        
+        loadImages()
+    }, [])
+
     // Draw the soccer ball
     const drawBall = useCallback((ctx: CanvasRenderingContext2D, ball: Ball) => {
+        if (!ballImageRef.current) return
+        
         ctx.save()
         ctx.translate(ball.x, ball.y)
         ctx.rotate(ball.rotation)
-
-        // Ball base (white)
+        
+        // Create circular clipping path for perfect circle
         ctx.beginPath()
         ctx.arc(0, 0, ball.radius, 0, Math.PI * 2)
-        ctx.fillStyle = "#ffffff"
-        ctx.fill()
-        ctx.strokeStyle = "#333333"
-        ctx.lineWidth = 2
-        ctx.stroke()
-
-        // Pentagon pattern
-        const pentagonAngles = [0, 72, 144, 216, 288].map(a => (a * Math.PI) / 180)
-
-        // Center pentagon
-        ctx.beginPath()
-        const centerSize = ball.radius * 0.35
-        pentagonAngles.forEach((angle, i) => {
-            const x = Math.cos(angle - Math.PI / 2) * centerSize
-            const y = Math.sin(angle - Math.PI / 2) * centerSize
-            if (i === 0) ctx.moveTo(x, y)
-            else ctx.lineTo(x, y)
-        })
-        ctx.closePath()
-        ctx.fillStyle = "#1a1a1a"
-        ctx.fill()
-
-        // Outer pentagons
-        pentagonAngles.forEach((angle) => {
-            const px = Math.cos(angle - Math.PI / 2) * ball.radius * 0.7
-            const py = Math.sin(angle - Math.PI / 2) * ball.radius * 0.7
-
-            ctx.beginPath()
-            const outerSize = ball.radius * 0.25
-            for (let i = 0; i < 5; i++) {
-                const a = angle + (i * 72 * Math.PI) / 180
-                const x = px + Math.cos(a - Math.PI / 2) * outerSize
-                const y = py + Math.sin(a - Math.PI / 2) * outerSize
-                if (i === 0) ctx.moveTo(x, y)
-                else ctx.lineTo(x, y)
-            }
-            ctx.closePath()
-            ctx.fillStyle = "#1a1a1a"
-            ctx.fill()
-        })
-
-        // Highlight for 3D effect
-        ctx.beginPath()
-        ctx.arc(-ball.radius * 0.3, -ball.radius * 0.3, ball.radius * 0.2, 0, Math.PI * 2)
-        ctx.fillStyle = "rgba(255, 255, 255, 0.4)"
-        ctx.fill()
-
+        ctx.clip()
+        
+        const size = ball.radius * 2
+        ctx.drawImage(
+            ballImageRef.current,
+            -ball.radius,
+            -ball.radius,
+            size,
+            size
+        )
+        
         ctx.restore()
+    }, [])
+
+    // Draw emoji feedback
+    const drawEmojiFeedback = useCallback((ctx: CanvasRenderingContext2D) => {
+        const arr = emojiFeedbackRef.current
+        for (let i = 0; i < arr.length; i++) {
+            const emoji = arr[i]
+            ctx.save()
+            ctx.globalAlpha = emoji.opacity
+            ctx.font = '30px Arial'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(emoji.emoji, emoji.x, emoji.y)
+            ctx.restore()
+        }
     }, [])
 
     // Game loop
@@ -185,29 +261,40 @@ export function FootballTapGame() {
         const ctx = canvasRef.current.getContext("2d")
         if (!ctx) return
 
-        const deltaTime = timestamp - lastTimeRef.current
+        const frameMs = 1000 / 60
+        // deltaTime clamped to avoid spiral of death on tab switch or long frames
+        let deltaTime = Math.min(200, Math.max(0, timestamp - lastTimeRef.current))
         lastTimeRef.current = timestamp
+
+        // fixed timestep accumulator
+        accumulatorRef.current += deltaTime
 
         const ball = ballRef.current
 
-        // Apply physics
-        ball.vy += GRAVITY
-        ball.vx *= FRICTION
-        ball.x += ball.vx
-        ball.y += ball.vy
-        ball.rotation += ball.vx * 0.02
+        while (accumulatorRef.current >= frameMs) {
+            // Step physics once using original per-frame logic
+            if (gameStarted) {
+                ball.vy += GRAVITY
+            }
+            ball.vx *= FRICTION
+            ball.x += ball.vx
+            ball.y += ball.vy
+            ball.rotation += ball.vx * 0.02
 
-        // Wall bounces
-        if (ball.x - ball.radius < 0) {
-            ball.x = ball.radius
-            ball.vx = Math.abs(ball.vx) * 0.8
-        }
-        if (ball.x + ball.radius > canvasSize.width) {
-            ball.x = canvasSize.width - ball.radius
-            ball.vx = -Math.abs(ball.vx) * 0.8
+            // Wall bounces
+            if (ball.x - ball.radius < 0) {
+                ball.x = ball.radius
+                ball.vx = Math.abs(ball.vx) * 0.8
+            }
+            if (ball.x + ball.radius > canvasSize.width) {
+                ball.x = canvasSize.width - ball.radius
+                ball.vx = -Math.abs(ball.vx) * 0.8
+            }
+
+            accumulatorRef.current -= frameMs
         }
 
-        // Check if ball fell off screen
+        // Check if ball fell off screen (after physics updates)
         if (ball.y - ball.radius > canvasSize.height) {
             playGameOverSound()
             setGameState("gameover")
@@ -224,10 +311,18 @@ export function FootballTapGame() {
 
         // Clear and redraw
         ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
+        
+        // Draw background
+        if (backgroundImageRef.current) {
+            ctx.drawImage(backgroundImageRef.current, 0, 0, canvasSize.width, canvasSize.height)
+        }
+        
         drawBall(ctx, ball)
+        updateEmojiFeedback()
+        drawEmojiFeedback(ctx)
 
         animationRef.current = requestAnimationFrame(gameLoop)
-    }, [gameState, canvasSize, drawBall, playGameOverSound, endGame, highScore])
+    }, [gameState, canvasSize, drawBall, playGameOverSound, endGame, highScore, gameStarted, updateEmojiFeedback, drawEmojiFeedback])
 
     // Start game loop
     useEffect(() => {
@@ -247,12 +342,13 @@ export function FootballTapGame() {
     const initBall = useCallback(() => {
         ballRef.current = {
             x: canvasSize.width / 2,
-            y: canvasSize.height / 2,
+            y: canvasSize.height - BALL_RADIUS - 20, // Bottom center with some padding
             vx: 0,
             vy: 0,
             radius: BALL_RADIUS,
             rotation: 0,
         }
+        setGameStarted(false) // Reset game started flag
     }, [canvasSize])
 
     // Handle tap/click on ball
@@ -268,12 +364,16 @@ export function FootballTapGame() {
 
         // Check if tap is on the ball
         if (distance <= ball.radius * 1.3) {
-            // Record action with server
-            const success = await recordAction("tap")
+            // Good emoji - tapped the ball
+            const randomGoodEmoji = goodEmojis[Math.floor(Math.random() * goodEmojis.length)]
+            showEmojiFeedback(randomGoodEmoji, ball.x, ball.y - ball.radius - 30)
 
-            if (!success && cheatingDetected) {
-                setGameState("gameover")
-                return
+            // Record action with server
+            await recordAction("tap")
+
+            // Start the game on first tap
+            if (!gameStarted) {
+                setGameStarted(true)
             }
 
             // Apply bounce physics
@@ -285,8 +385,12 @@ export function FootballTapGame() {
 
             playKickSound()
             setScore(prev => prev + 1)
+        } else {
+            // Bad emoji - missed the ball
+            const randomBadEmoji = badEmojis[Math.floor(Math.random() * badEmojis.length)]
+            showEmojiFeedback(randomBadEmoji, x, y)
         }
-    }, [gameState, recordAction, cheatingDetected, playKickSound])
+    }, [gameState, recordAction, playKickSound, gameStarted, showEmojiFeedback, goodEmojis, badEmojis])
 
     // Start new game
     const handleStart = useCallback(async () => {
@@ -294,33 +398,45 @@ export function FootballTapGame() {
         initBall()
         setScore(0)
         setGameState("playing")
+        setGameStarted(false)
+        emojiFeedbackRef.current = [] // Clear emoji feedback
     }, [startGame, initBall])
 
     // Handle canvas interactions
     const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        // Ignore synthetic click after touch on mobile
+        if (lastInputWasTouchRef.current) return
         handleTap(e.clientX, e.clientY)
     }
 
     const handleCanvasTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
         e.preventDefault()
         const touch = e.touches[0]
+        lastInputWasTouchRef.current = true
+        // reset after short delay to allow click suppression
+        setTimeout(() => { lastInputWasTouchRef.current = false }, 500)
         handleTap(touch.clientX, touch.clientY)
     }
 
     // Draw initial state
     useEffect(() => {
-        if (!canvasRef.current || canvasSize.width === 0) return
+        if (!canvasRef.current || canvasSize.width === 0 || !imagesLoaded) return
 
         const ctx = canvasRef.current.getContext("2d")
         if (!ctx) return
 
         ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
 
+        // Draw background
+        if (backgroundImageRef.current) {
+            ctx.drawImage(backgroundImageRef.current, 0, 0, canvasSize.width, canvasSize.height)
+        }
+
         if (gameState === "idle" || gameState === "gameover") {
-            // Draw static ball in center
+            // Draw static ball at bottom center
             const staticBall: Ball = {
                 x: canvasSize.width / 2,
-                y: canvasSize.height / 2,
+                y: canvasSize.height - BALL_RADIUS - 20,
                 vx: 0,
                 vy: 0,
                 radius: BALL_RADIUS,
@@ -328,10 +444,21 @@ export function FootballTapGame() {
             }
             drawBall(ctx, staticBall)
         }
-    }, [canvasSize, gameState, drawBall])
+        
+        // Draw emoji feedback
+        drawEmojiFeedback(ctx)
+    }, [canvasSize, gameState, drawBall, imagesLoaded, drawEmojiFeedback])
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div 
+            className="min-h-screen flex flex-col"
+            style={{
+                backgroundImage: `url('/football/images/banner.jpg')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+            }}
+        >
             {/* Header */}
             <header className="flex items-center justify-between p-4">
                 <Link href="/">
@@ -400,16 +527,10 @@ export function FootballTapGame() {
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm">
                         <h2 className="text-3xl font-bold text-gray-800 mb-2">Game Over!</h2>
 
-                        {cheatingDetected ? (
-                            <p className="text-red-500 mb-4">Suspicious activity detected. Score not saved.</p>
-                        ) : (
-                            <>
-                                <p className="text-6xl font-bold text-emerald-500 mb-2">{score}</p>
-                                <p className="text-gray-500 mb-8">
-                                    {score > highScore ? "New High Score!" : `Best: ${highScore}`}
-                                </p>
-                            </>
-                        )}
+                        <p className="text-6xl font-bold text-emerald-500 mb-2">{score}</p>
+                        <p className="text-gray-500 mb-8">
+                            {score > highScore ? "New High Score!" : `Best: ${highScore}`}
+                        </p>
 
                         <Button
                             onClick={handleStart}

@@ -7,7 +7,6 @@ interface UseGameSessionReturn {
   session: GameSession | null
   isLoading: boolean
   error: string | null
-  cheatingDetected: boolean
   startGame: (gameId: string) => Promise<void>
   recordAction: (action: string) => Promise<boolean>
   endGame: () => Promise<{ verified: boolean; finalScore: number } | null>
@@ -17,12 +16,11 @@ export function useGameSession(): UseGameSessionReturn {
   const [session, setSession] = useState<GameSession | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [cheatingDetected, setCheatingDetected] = useState(false)
 
   const startGame = useCallback(async (gameId: string) => {
     setIsLoading(true)
     setError(null)
-    setCheatingDetected(false)
+    // anti-cheat disabled: do not track cheating
     
     try {
       const response = await fetch("/api/game/start", {
@@ -53,19 +51,9 @@ export function useGameSession(): UseGameSessionReturn {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session, action }),
       })
-      
+      if (!response.ok) return false
+
       const data = await response.json()
-      
-      if (data.cheatingDetected) {
-        setCheatingDetected(true)
-        setError(data.reason || "Cheating detected")
-        return false
-      }
-      
-      if (!response.ok) {
-        return false
-      }
-      
       setSession(data.session)
       return true
     } catch {
@@ -82,15 +70,9 @@ export function useGameSession(): UseGameSessionReturn {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session }),
       })
-      
+      if (!response.ok) return null
+
       const data = await response.json()
-      
-      if (data.cheatingDetected) {
-        setCheatingDetected(true)
-        setError("Score verification failed")
-        return null
-      }
-      
       return {
         verified: data.verified,
         finalScore: data.finalScore,
@@ -104,7 +86,6 @@ export function useGameSession(): UseGameSessionReturn {
     session,
     isLoading,
     error,
-    cheatingDetected,
     startGame,
     recordAction,
     endGame,
