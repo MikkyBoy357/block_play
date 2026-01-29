@@ -3,10 +3,7 @@
 import React from "react"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import { ArrowLeft, Play, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { useGameSession } from "@/hooks/use-game-session"
-import Link from "next/link"
 
 interface Ball {
     x: number
@@ -39,6 +36,8 @@ export function FootballTapGame() {
     const [gameState, setGameState] = useState<GameState>("idle")
     const [score, setScore] = useState(0)
     const [highScore, setHighScore] = useState(0)
+    const [displayBest, setDisplayBest] = useState<number | null>(null)
+    const [scoreAnim, setScoreAnim] = useState(false)
     const [soundEnabled, setSoundEnabled] = useState(true)
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
     const [imagesLoaded, setImagesLoaded] = useState(false)
@@ -46,6 +45,7 @@ export function FootballTapGame() {
     const emojiFeedbackRef = useRef<EmojiFeedback[]>([])
     const emojiIdRef = useRef(0)
     const lastInputWasTouchRef = useRef(false)
+    const [showBestOnIdle, setShowBestOnIdle] = useState(false)
 
     // Emoji lists
     const goodEmojis = ['😎', '🤙🏾', '🙌🏾', '🔥', '⚽️', '💪🏾', '🏆', '🥇']
@@ -146,22 +146,10 @@ export function FootballTapGame() {
         }
     }, [])
 
-    // Handle canvas resize
+    // Handle canvas resize - always fullscreen
     useEffect(() => {
         const updateSize = () => {
-            const aspectRatio = 9 / 16 // 9:16 aspect ratio
-            const maxWidth = Math.min(window.innerWidth, 500)
-            const maxHeight = Math.min(window.innerHeight - 100, 700)
-            
-            let width = maxWidth
-            let height = width / aspectRatio
-            
-            if (height > maxHeight) {
-                height = maxHeight
-                width = height * aspectRatio
-            }
-            
-            setCanvasSize({ width: Math.floor(width), height: Math.floor(height) })
+            setCanvasSize({ width: Math.floor(window.innerWidth), height: Math.floor(window.innerHeight) })
         }
 
         updateSize()
@@ -181,6 +169,8 @@ export function FootballTapGame() {
         const ctx = canvas.getContext('2d')
         if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     }, [canvasSize])
+
+    // (moved) Re-init ball whenever canvas size changes - see below after initBall
 
     // Load high score from localStorage (this is just for display, actual scores are server-validated)
     useEffect(() => {
@@ -297,15 +287,32 @@ export function FootballTapGame() {
         // Check if ball fell off screen (after physics updates)
         if (ball.y - ball.radius > canvasSize.height) {
             playGameOverSound()
+
+            // Immediately show best score in the score position (either previous high or this score)
+            const immediateBest = Math.max(highScore, score)
+            setDisplayBest(immediateBest)
+            setScoreAnim(true)
             setGameState("gameover")
 
-            // Verify and save score
+            // clear animation after a short duration
+            setTimeout(() => setScoreAnim(false), 800)
+
+            // Verify and save score, then reset ball after 1s and show best on idle
             endGame().then((result) => {
                 if (result?.verified && result.finalScore > highScore) {
                     setHighScore(result.finalScore)
                     localStorage.setItem("footballTap_highScore", result.finalScore.toString())
                 }
+            }).finally(() => {
+                setTimeout(() => {
+                    initBall()
+                    setGameStarted(false)
+                    setShowBestOnIdle(true)
+                    setGameState("idle")
+                    setDisplayBest(null)
+                }, 1000)
             })
+
             return
         }
 
@@ -351,9 +358,15 @@ export function FootballTapGame() {
         setGameStarted(false) // Reset game started flag
     }, [canvasSize])
 
+    // Re-init ball whenever canvas size changes
+    useEffect(() => {
+        if (canvasSize.width === 0 || canvasSize.height === 0) return
+        initBall()
+    }, [canvasSize, initBall])
+
     // Handle tap/click on ball
     const handleTap = useCallback(async (clientX: number, clientY: number) => {
-        if (gameState !== "playing" || !ballRef.current || !canvasRef.current) return
+        if (!ballRef.current || !canvasRef.current) return
 
         const rect = canvasRef.current.getBoundingClientRect()
         const x = clientX - rect.left
@@ -368,13 +381,17 @@ export function FootballTapGame() {
             const randomGoodEmoji = goodEmojis[Math.floor(Math.random() * goodEmojis.length)]
             showEmojiFeedback(randomGoodEmoji, ball.x, ball.y - ball.radius - 30)
 
+            // If we're currently idle, start the game on first tap
+            if (gameState === "idle") {
+                startGame("football-tap").catch(() => {})
+                setGameState("playing")
+                setGameStarted(true)
+                setScore(0)
+                emojiFeedbackRef.current = []
+            }
+
             // Record action with server
             await recordAction("tap")
-
-            // Start the game on first tap
-            if (!gameStarted) {
-                setGameStarted(true)
-            }
 
             // Apply bounce physics
             ball.vy = BOUNCE_VELOCITY
@@ -453,46 +470,30 @@ export function FootballTapGame() {
         <div 
             className="min-h-screen flex flex-col"
             style={{
-                backgroundImage: `url('/football/images/banner.jpg')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
+                backgroundColor: '#000',
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50
             }}
         >
-            {/* Header */}
-            <header className="flex items-center justify-between p-4">
-                <Link href="/">
-                    <Button variant="ghost" size="icon" className="text-gray-800 hover:bg-gray-100">
-                        <ArrowLeft className="w-6 h-6" />
-                    </Button>
-                </Link>
-
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSoundEnabled(!soundEnabled)}
-                        className="text-gray-800 hover:bg-gray-100"
-                    >
-                        {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-                    </Button>
-
-                    <div className="text-right">
-                        <p className="text-sm text-gray-500 font-medium">High Score</p>
-                        <div className="flex items-center gap-2">
-                            <Trophy className="w-4 h-4 text-amber-500" />
-                            <span className="font-bold text-gray-800">{highScore}</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            {/* (header removed - game only) */}
 
             {/* Game Area */}
             <div className="flex-1 flex flex-col items-center justify-center relative">
                 {/* Score Display */}
-                {gameState === "playing" && (
+                {(gameState === "playing" || gameState === "gameover") && (
                     <div className="absolute top-8 left-1/2 -translate-x-1/2 z-10">
-                        <span className="text-8xl font-bold text-gray-300 select-none">{score}</span>
+                        <span
+                            className="text-8xl font-bold select-none"
+                            style={{
+                                color: gameState === 'playing' ? 'rgba(255,255,255,0.9)' : '#10B981',
+                                WebkitTextStroke: '2px rgba(0,0,0,0.5)',
+                                textShadow: '0 2px 0 rgba(0,0,0,0.6)',
+                                display: 'inline-block',
+                                transform: scoreAnim ? 'scale(1.12)' : 'scale(1)',
+                                transition: 'transform 300ms cubic-bezier(.2,.8,.2,1), color 200ms'
+                            }}
+                        >
+                            {gameState === 'playing' ? score : (displayBest ?? highScore)}
+                        </span>
                     </div>
                 )}
 
@@ -505,43 +506,6 @@ export function FootballTapGame() {
                     onTouchStart={handleCanvasTouch}
                     className="touch-none cursor-pointer"
                 />
-
-                {/* Start Screen */}
-                {gameState === "idle" && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-                        <h1 className="text-4xl font-bold text-gray-800 mb-2">Football Tap</h1>
-                        <p className="text-gray-500 mb-8">Tap the ball to keep it in the air!</p>
-                        <Button
-                            onClick={handleStart}
-                            size="lg"
-                            className="bg-emerald-500 hover:bg-emerald-600 text-white gap-2 px-8"
-                        >
-                            <Play className="w-5 h-5" />
-                            Start Game
-                        </Button>
-                    </div>
-                )}
-
-                {/* Game Over Screen */}
-                {gameState === "gameover" && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm">
-                        <h2 className="text-3xl font-bold text-gray-800 mb-2">Game Over!</h2>
-
-                        <p className="text-6xl font-bold text-emerald-500 mb-2">{score}</p>
-                        <p className="text-gray-500 mb-8">
-                            {score > highScore ? "New High Score!" : `Best: ${highScore}`}
-                        </p>
-
-                        <Button
-                            onClick={handleStart}
-                            size="lg"
-                            className="bg-emerald-500 hover:bg-emerald-600 text-white gap-2 px-8"
-                        >
-                            <RotateCcw className="w-5 h-5" />
-                            Play Again
-                        </Button>
-                    </div>
-                )}
             </div>
         </div>
     )
