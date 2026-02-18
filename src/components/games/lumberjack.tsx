@@ -6,8 +6,12 @@ const VISIBLE_SEGMENTS = 10
 const SEGMENT_HEIGHT = 90 
 const CUTS_PER_TRUNK = 6
 const INITIAL_TIME = 100 
-const TIME_DECREASE_RATE = 0.25 
-const TIME_REGAIN_PER_CUT = 4 
+const BASE_TIME_DECREASE_RATE = 0.15
+const MAX_TIME_DECREASE_RATE = 0.45
+const TIME_REGAIN_PER_CUT = 4
+const FAST_PLAY_BONUS_SLOWDOWN = 0.08 // How much to slow down timer when playing fast
+const FAST_PLAY_THRESHOLD_CUTS = 10 // Number of cuts to check for fast play
+const FAST_PLAY_WINDOW_MS = 1200 // 1.2 second window for fast play detection 
 
 const ASSETS = {
   branch: "/lumberjack/images/branch.svg",
@@ -48,15 +52,26 @@ export function LumberjackGame() {
   const [timeLeft, setTimeLeft] = useState(INITIAL_TIME)
   const [fallingBranches, setFallingBranches] = useState<FallingBranch[]>([])
   const [isChopping, setIsChopping] = useState(false)
+  const [timeDecreaseRate, setTimeDecreaseRate] = useState(BASE_TIME_DECREASE_RATE)
   
   const segmentIdCounter = useRef(0)
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({})
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const cutTimestamps = useRef<number[]>([])
+
+  // Sound paths for creating new instances
+  const SOUND_PATHS: { [key: string]: string } = {
+    hit1: "/lumberjack/sounds/hit1.mp3",
+    hit2: "/lumberjack/sounds/hit2.mp3",
+    hit3: "/lumberjack/sounds/hit3.mp3",
+    bonus: "/lumberjack/sounds/bonus.mp3",
+  }
 
   useEffect(() => {
-    audioRefs.current["hit1"] = new Audio("/lumberjack/sounds/hit1.mp3")
-    audioRefs.current["hit2"] = new Audio("/lumberjack/sounds/hit2.mp3")
-    audioRefs.current["hit3"] = new Audio("/lumberjack/sounds/hit3.mp3")
+    // Preload sounds
+    Object.entries(SOUND_PATHS).forEach(([key, path]) => {
+      audioRefs.current[key] = new Audio(path)
+    })
     initializeGame()
     return () => stopTimer()
   }, [])
@@ -69,14 +84,14 @@ export function LumberjackGame() {
             handleGameOver()
             return 0
           }
-          return prev - TIME_DECREASE_RATE
+          return prev - timeDecreaseRate
         })
       }, 50)
     } else {
       stopTimer()
     }
     return () => stopTimer()
-  }, [gameStatus])
+  }, [gameStatus, timeDecreaseRate])
 
   const stopTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current)
@@ -87,11 +102,21 @@ export function LumberjackGame() {
     setGameStatus("game-over")
   }
 
-  const playSound = (key: string) => {
-    const sound = audioRefs.current[key]
-    if (sound) {
-      sound.currentTime = 0
+  const playSound = (key: string, allowOverlap = false) => {
+    const path = SOUND_PATHS[key]
+    if (!path) return
+    
+    if (allowOverlap) {
+      // Create a new Audio instance so sounds can overlap
+      const sound = new Audio(path)
       sound.play().catch(() => {})
+    } else {
+      // Reuse existing instance (will restart if already playing)
+      const sound = audioRefs.current[key]
+      if (sound) {
+        sound.currentTime = 0
+        sound.play().catch(() => {})
+      }
     }
   }
 
@@ -120,6 +145,8 @@ export function LumberjackGame() {
     setFallingBranches([])
     setGameStatus("playing")
     setIsChopping(false)
+    setTimeDecreaseRate(BASE_TIME_DECREASE_RATE)
+    cutTimestamps.current = []
   }
 
   const handleChop = useCallback((side: "left" | "right") => {
@@ -130,9 +157,16 @@ export function LumberjackGame() {
     setTimeout(() => setIsChopping(false), 150)
 
     const targetSegment = segments[1] 
-    const nextBranchSegment = segments[2]
+    const nextSegment = segments[2]
 
-    if (nextBranchSegment && nextBranchSegment.side === side) {
+    // If there's a branch on the same side as the player, they get hit and die
+    if (targetSegment && targetSegment.side === side) {
+      handleGameOver()
+      return
+    }
+
+    // After cutting, the next segment falls down - if it has a branch on player's side, they die
+    if (nextSegment && nextSegment.side === side) {
       handleGameOver()
       return
     }
@@ -147,7 +181,42 @@ export function LumberjackGame() {
       }, 600)
     }
 
-    setScore(s => s + 1)
+    // Track cut timestamps for fast-play detection
+    const now = Date.now()
+    cutTimestamps.current.push(now)
+    
+    // Keep only cuts within the fast-play window (4 seconds)
+    cutTimestamps.current = cutTimestamps.current.filter(t => now - t < FAST_PLAY_WINDOW_MS)
+    
+    setScore(s => {
+      const newScore = s + 1
+      
+      // Calculate progressive difficulty: timer gets faster with score
+      // Increases from 0.25 to 0.6 over ~100 points
+      const progressiveDifficulty = Math.min(
+        MAX_TIME_DECREASE_RATE,
+        BASE_TIME_DECREASE_RATE + (newScore * 0.0035)
+      )
+      
+      // Check for fast play reward: if player got FAST_PLAY_THRESHOLD_CUTS cuts within the time window
+      const isFastPlay = cutTimestamps.current.length >= FAST_PLAY_THRESHOLD_CUTS
+      
+      // Play bonus sound when fast play is achieved (with overlap so it doesn't get cut off)
+      if (isFastPlay) {
+        playSound("bonus", true)
+        // Reset timestamps so player needs to earn the bonus again
+        cutTimestamps.current = []
+      }
+      
+      // Apply fast-play bonus (slight slowdown reward)
+      const finalRate = isFastPlay 
+        ? Math.max(BASE_TIME_DECREASE_RATE, progressiveDifficulty - FAST_PLAY_BONUS_SLOWDOWN)
+        : progressiveDifficulty
+      
+      setTimeDecreaseRate(finalRate)
+      
+      return newScore
+    })
     setTimeLeft(prev => Math.min(INITIAL_TIME, prev + TIME_REGAIN_PER_CUT))
     
     setSegments(prev => {
@@ -179,13 +248,78 @@ export function LumberjackGame() {
         }
         .animate-fall-left { animation: branch-fly-left 0.6s ease-out forwards; }
         .animate-fall-right { animation: branch-fly-right 0.6s ease-out forwards; }
+        
+        @keyframes clouds-scroll-slow {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes clouds-scroll-fast {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-clouds-slow {
+          animation: clouds-scroll-slow 45s linear infinite;
+        }
+        .animate-clouds-fast {
+          animation: clouds-scroll-fast 20s linear infinite;
+        }
       `}</style>
 
       {/* TOP REGION */}
       <div className="relative w-full h-1/4 flex flex-col items-center pt-10 z-50">
-        <img src={ASSETS.clouds} className="absolute top-10 opacity-50 w-full" alt="" />
+        {/* Animated clouds background - slow layer (big clouds) */}
+        <div className="absolute top-0 left-0 w-full h-1/2 overflow-hidden -z-10 opacity-40">
+          <div className="animate-clouds-slow flex h-full" style={{ width: '200%' }}>
+            <div 
+              className="h-full w-1/2 flex items-center justify-around"
+              style={{
+                backgroundImage: `url(${ASSETS.clouds})`,
+                backgroundRepeat: 'repeat-x',
+                backgroundSize: 'auto 120%',
+                backgroundPosition: 'left center',
+                paddingLeft: '100px'
+              }}
+            />
+            <div 
+              className="h-full w-1/2 flex items-center justify-around"
+              style={{
+                backgroundImage: `url(${ASSETS.clouds})`,
+                backgroundRepeat: 'repeat-x',
+                backgroundSize: 'auto 120%',
+                backgroundPosition: 'left center',
+                paddingLeft: '100px'
+              }}
+            />
+          </div>
+        </div>
         
-        <div className="relative w-64 h-8 border-4 border-[#5D2E0C] bg-[#F3E5AB] rounded-full overflow-hidden mb-4">
+        {/* Animated clouds foreground - fast layer (small clouds) */}
+        <div className="absolute top-4 left-0 w-full h-1/2 overflow-hidden -z-10 opacity-60">
+          <div className="animate-clouds-fast flex h-full" style={{ width: '200%' }}>
+            <div 
+              className="h-full w-3/4"
+              style={{
+                backgroundImage: `url(${ASSETS.clouds})`,
+                backgroundRepeat: 'repeat-x',
+                backgroundSize: 'auto 80%',
+                backgroundPosition: 'left center',
+                paddingLeft: '150px'
+              }}
+            />
+            <div 
+              className="h-full w-1/2"
+              style={{
+                backgroundImage: `url(${ASSETS.clouds})`,
+                backgroundRepeat: 'repeat-x',
+                backgroundSize: 'auto 80%',
+                backgroundPosition: 'left center',
+                paddingLeft: '150px'
+              }}
+            />
+          </div>
+        </div>
+        
+        <div className="relative w-44 h-8 border-4 border-[#5D2E0C] bg-[#F3E5AB] rounded-full overflow-hidden mb-4">
           <div 
             className="h-full transition-all duration-100" 
             style={{ 
@@ -214,15 +348,21 @@ export function LumberjackGame() {
           }}
         />
 
-        <div className="relative w-64 h-full z-10">
+        {/* Ground/Root at the base of the tree */}
+        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 flex items-end -z-20 pointer-events-none">
+          <img src={ASSETS.groundLeft} className="h-28" alt="" />
+          <img src={ASSETS.groundRight} className="h-28 -ml-1" alt="" />
+        </div>
+
+        <div className="relative w-64 h-full -z-10">
           <div className="absolute bottom-0 w-full flex flex-col-reverse items-center">
             {segments.map((seg) => (
               <div key={seg.id} className="relative w-full" style={{ height: SEGMENT_HEIGHT }}>
                 {seg.side !== "none" && (
                   <img 
                     src={ASSETS.branch} 
-                    className={`absolute bottom-2 w-48 transition-all duration-100 ${
-                      seg.side === "left" ? "right-[60%] scale-x-[-1]" : "left-[60%]"
+                    className={`absolute bottom-2 w-40 transition-all duration-100 ${
+                      seg.side === "left" ? "right-[55%] scale-x-[-1]" : "left-[55%]"
                     }`}
                     alt="branch"
                   />
@@ -255,7 +395,7 @@ export function LumberjackGame() {
             <div className="relative">
               <img 
                 src={gameStatus === "playing" ? ASSETS.lumberjack : ASSETS.died} 
-                className={`w-28 relative z-10 ${playerSide === 'left' ? 'scale-x-[-1]' : ''}`} 
+                className={`w-22 relative z-10 ${playerSide === 'left' ? 'scale-x-[-1]' : ''}`} 
                 alt="body" 
               />
               {gameStatus === "playing" && (
@@ -266,7 +406,7 @@ export function LumberjackGame() {
                   }`}
                   style={{
                     top: isChopping ? '40px' : '5px',
-                    ...(playerSide === 'left' ? { right: '0px' } : { left: '0px' })
+                    ...(playerSide === 'right' ? { right: '-20px' } : { left: '-20px' })
                   }}
                   alt="hand"
                 />
@@ -292,21 +432,84 @@ export function LumberjackGame() {
             <img src={ASSETS.rightArrow} className="w-24" alt="Right" />
           </button>
         </div>
-
-        <div className="absolute bottom-0 w-full h-32 flex justify-between items-end px-4 pointer-events-none">
-          <img src={ASSETS.groundLeft} className="h-24" alt="" />
-          <img src={ASSETS.groundRight} className="h-24" alt="" />
-        </div>
       </div>
 
       {gameStatus === "game-over" && (
-        <div className="absolute inset-0 bg-black/60 z-[100] flex flex-col items-center justify-center">
-          <div className="bg-white p-10 rounded-3xl text-center shadow-2xl">
-            <h2 className="text-4xl font-black text-red-600 mb-4">TIMBER!</h2>
-            <p className="text-2xl text-gray-700 mb-6 font-bold">Score: {score}</p>
-            <button onClick={initializeGame} className="bg-[#eab87d] p-4 rounded-full active:scale-90">
-              <img src={ASSETS.refresh} className="w-12 h-12" alt="Restart" />
-            </button>
+        <div className="absolute inset-0 bg-black/70 z-[100] flex flex-col items-center justify-center">
+          <style>{`
+            @keyframes bounce-in {
+              0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+              50% { transform: scale(1.1) rotate(3deg); }
+              70% { transform: scale(0.95) rotate(-2deg); }
+              100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            }
+            @keyframes shake {
+              0%, 100% { transform: translateX(0); }
+              20% { transform: translateX(-8px) rotate(-2deg); }
+              40% { transform: translateX(8px) rotate(2deg); }
+              60% { transform: translateX(-6px) rotate(-1deg); }
+              80% { transform: translateX(6px) rotate(1deg); }
+            }
+            @keyframes pulse-glow {
+              0%, 100% { box-shadow: 0 0 20px rgba(234, 184, 125, 0.5), 0 0 40px rgba(234, 184, 125, 0.3); }
+              50% { box-shadow: 0 0 30px rgba(234, 184, 125, 0.8), 0 0 60px rgba(234, 184, 125, 0.5); }
+            }
+            @keyframes float {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-10px); }
+            }
+            @keyframes star-spin {
+              0% { transform: rotate(0deg) scale(1); }
+              50% { transform: rotate(180deg) scale(1.2); }
+              100% { transform: rotate(360deg) scale(1); }
+            }
+            .animate-bounce-in { animation: bounce-in 0.6s ease-out forwards; }
+            .animate-shake { animation: shake 0.5s ease-in-out; }
+            .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+            .animate-float { animation: float 3s ease-in-out infinite; }
+            .animate-star-spin { animation: star-spin 3s linear infinite; }
+          `}</style>
+          
+          <div className="animate-bounce-in relative">
+            {/* Decorative stars/sparkles */}
+            <div className="absolute -top-8 -left-8 text-4xl animate-star-spin">⭐</div>
+            <div className="absolute -top-6 -right-10 text-3xl animate-star-spin" style={{ animationDelay: '0.5s' }}>✨</div>
+            <div className="absolute -bottom-6 -left-6 text-2xl animate-star-spin" style={{ animationDelay: '1s' }}>⭐</div>
+            <div className="absolute -bottom-8 -right-8 text-3xl animate-star-spin" style={{ animationDelay: '1.5s' }}>✨</div>
+            
+            <div 
+              className="bg-gradient-to-b from-amber-100 to-amber-200 p-8 rounded-3xl text-center shadow-2xl border-4 border-amber-600 animate-pulse-glow"
+              style={{ minWidth: '280px' }}
+            >
+              {/* Wooden plank header */}
+              <div className="bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 -mt-14 mx-auto px-8 py-3 rounded-xl shadow-lg border-2 border-amber-800 mb-4" style={{ width: 'fit-content' }}>
+                <h2 className="text-3xl font-black text-white drop-shadow-lg tracking-wider animate-shake" style={{ textShadow: '2px 2px 0 #92400e' }}>
+                  🪓 TIMBER! 🪓
+                </h2>
+              </div>
+              
+              {/* Score display */}
+              <div className="bg-white/80 rounded-2xl p-4 mb-6 shadow-inner border-2 border-amber-300">
+                <p className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-1">Your Score</p>
+                <p className="text-6xl font-black text-amber-800 animate-float" style={{ textShadow: '3px 3px 0 #fcd34d' }}>
+                  {score}
+                </p>
+                {score >= 50 && <p className="text-lg font-bold text-green-600 mt-2">🏆 Amazing!</p>}
+                {score >= 25 && score < 50 && <p className="text-lg font-bold text-blue-600 mt-2">👏 Great job!</p>}
+                {score < 25 && <p className="text-lg font-bold text-gray-600 mt-2">Keep practicing!</p>}
+              </div>
+              
+              {/* Play again button */}
+              <button 
+                onClick={initializeGame} 
+                className="group relative bg-gradient-to-b from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 px-8 py-4 rounded-2xl active:scale-95 transition-all duration-150 shadow-lg hover:shadow-xl border-b-4 border-green-800 hover:border-green-900"
+              >
+                <div className="flex items-center gap-3">
+                  <img src={ASSETS.refresh} className="w-8 h-8 group-hover:rotate-180 transition-transform duration-500" alt="" />
+                  <span className="text-xl font-black text-white drop-shadow-md">PLAY AGAIN</span>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       )}

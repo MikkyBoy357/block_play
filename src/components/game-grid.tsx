@@ -1,7 +1,7 @@
 "use client"
 
 import { GameCard } from "./game-card"
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices } from "lucide-react"
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle } from "lucide-react"
 
 const games = [
   {
@@ -26,6 +26,16 @@ const games = [
   },
   {
     id: 3,
+    title: "Basketball Tap",
+    slug: "basketball-tap",
+    description: "Swipe to shoot hoops",
+    icon: Circle,
+    color: "from-orange-500 to-red-500",
+    players: "1.2k",
+    image: "/basketball-court-game-neon.jpg",
+  },
+  {
+    id: 4,
     title: "Neon Shooter",
     slug: "neon-shooter",
     description: "Blast through cyber waves",
@@ -35,7 +45,7 @@ const games = [
     image: "/neon-shooter-space-game-cyberpunk.jpg",
   },
   {
-    id: 4,
+    id: 5,
     title: "Block Puzzle",
     slug: "block-puzzle",
     description: "Fit the pieces, clear the board",
@@ -45,7 +55,7 @@ const games = [
     image: "/tetris-block-puzzle-game-colorful.jpg",
   },
   {
-    id: 5,
+    id: 6,
     title: "Rocket Rush",
     slug: "rocket-rush",
     description: "Navigate through asteroid fields",
@@ -55,7 +65,7 @@ const games = [
     image: "/rocket-space-game-asteroids-neon.jpg",
   },
   {
-    id: 6,
+    id: 7,
     title: "Lucky Roll",
     slug: "lucky-roll",
     description: "Roll the dice, test your luck",
@@ -77,7 +87,7 @@ export function GameGrid() {
           </div>
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>6 games available</span>
+            <span>7 games available</span>
           </div>
         </div>
 
