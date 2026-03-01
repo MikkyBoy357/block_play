@@ -10,7 +10,7 @@ const GROUND_THICKNESS = 60
 const GRASS_THICKNESS = 10
 
 const PLAYER_SIZE = 32
-const PLAYER_X = 80 // fixed horizontal position
+const PLAYER_X = 80 // fixed screen horizontal position
 
 const SCROLL_SPEED_INITIAL = 3
 const SCROLL_SPEED_MAX = 7
@@ -29,10 +29,10 @@ const SPIKE_HEIGHT = 20
 const BUMP_WIDTH = 30
 const BUMP_HEIGHT = 50
 
-// Player horizontal movement
-const PLAYER_BASE_SPEED_RATIO = 0.65
-const JUMP_FORWARD_BOOST = 5
-const PLAYER_X_DECEL = 0.1
+// Floating platform config
+const PLATFORM_THICKNESS = 28
+const PLATFORM_MIN_WIDTH = 60
+const PLATFORM_MAX_WIDTH = 160
 
 // Colors matching the screenshot
 const COLORS = {
@@ -78,6 +78,12 @@ interface CloudObj {
   speed: number
 }
 
+interface FloatingPlatform {
+  x: number
+  width: number
+  y: number // top edge Y position in game coords
+}
+
 // ─── Main Component ──────────────────────────────────────────────
 export function GravityRunGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -97,12 +103,11 @@ export function GravityRunGame() {
   const velocityYRef = useRef(0)
   const scrollSpeedRef = useRef(SCROLL_SPEED_INITIAL)
   const scrollOffsetRef = useRef(0)
-  const playerXRef = useRef(PLAYER_X)
-  const playerVelXRef = useRef(0)
 
   // Terrain
   const bottomSegmentsRef = useRef<Segment[]>([])
   const topSegmentsRef = useRef<Segment[]>([])
+  const floatingPlatformsRef = useRef<FloatingPlatform[]>([])
 
   // Clouds (decoration)
   const cloudsRef = useRef<CloudObj[]>([])
@@ -222,6 +227,24 @@ export function GravityRunGame() {
     return segs
   }, [])
 
+  // ─── Floating platform generation ───────────────────────────────
+  const generateFloatingPlatforms = useCallback((startX: number, count: number, existing: FloatingPlatform[]): FloatingPlatform[] => {
+    const plats = [...existing]
+    let x = startX
+    const minY = GROUND_THICKNESS + BUMP_HEIGHT + 30
+    const maxY = GAME_HEIGHT - GROUND_THICKNESS - BUMP_HEIGHT - 30 - PLATFORM_THICKNESS
+
+    for (let i = 0; i < count; i++) {
+      // Space between platforms: 200-500px
+      x += 200 + Math.floor(Math.random() * 300)
+      const width = PLATFORM_MIN_WIDTH + Math.floor(Math.random() * (PLATFORM_MAX_WIDTH - PLATFORM_MIN_WIDTH))
+      const y = minY + Math.floor(Math.random() * (maxY - minY))
+      plats.push({ x, width, y })
+      x += width
+    }
+    return plats
+  }, [])
+
   const initTerrain = useCallback(() => {
     // Start with solid ground under the player
     const initialPlatform: Segment = {
@@ -238,7 +261,8 @@ export function GravityRunGame() {
     const top = generateSegments(topInitial.x + topInitial.width, 20, [topInitial])
     bottomSegmentsRef.current = bottom
     topSegmentsRef.current = top
-  }, [generateSegments])
+    floatingPlatformsRef.current = generateFloatingPlatforms(SEGMENT_WIDTH * 10, 15, [])
+  }, [generateSegments, generateFloatingPlatforms])
 
   // ─── Canvas sizing ──────────────────────────────────────────────
   useEffect(() => {
@@ -283,8 +307,6 @@ export function GravityRunGame() {
     gravityRef.current = "down"
     playerYRef.current = GAME_HEIGHT - GROUND_THICKNESS - PLAYER_SIZE
     velocityYRef.current = 0
-    playerXRef.current = PLAYER_X
-    playerVelXRef.current = SCROLL_SPEED_INITIAL
     scrollSpeedRef.current = SCROLL_SPEED_INITIAL
     scrollOffsetRef.current = 0
     scoreRef.current = 0
@@ -311,8 +333,6 @@ export function GravityRunGame() {
       const wasDown = gravityRef.current === "down"
       gravityRef.current = wasDown ? "up" : "down"
       velocityYRef.current = wasDown ? JUMP_VELOCITY : -JUMP_VELOCITY
-      // Forward boost to keep up with scrolling
-      playerVelXRef.current = scrollSpeedRef.current + JUMP_FORWARD_BOOST
       playJumpSound()
     }
   }, [startGame, playJumpSound])
@@ -485,6 +505,66 @@ export function GravityRunGame() {
     ctx.strokeRect(bumpScreenX, y, BUMP_WIDTH, BUMP_HEIGHT)
   }
 
+  const drawFloatingPlatform = (ctx: CanvasRenderingContext2D, screenX: number, y: number, width: number) => {
+    const h = PLATFORM_THICKNESS
+    const brickH = 14
+    const brickW = 20
+    const brickColors = ["#C62828", "#D32F2F", "#B71C1C", "#E53935", "#C94030"]
+    const mortarColor = "#A1887F"
+    const highlightColor = "rgba(255,255,255,0.15)"
+    const shadowColor = "rgba(0,0,0,0.18)"
+
+    // Mortar / background fill
+    ctx.fillStyle = mortarColor
+    ctx.fillRect(screenX, y, width, h)
+
+    // Save clip region so bricks don't overflow
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(screenX, y, width, h)
+    ctx.clip()
+
+    // Draw brick rows
+    let colorIdx = 0
+    for (let row = 0; row * brickH < h; row++) {
+      const by = y + row * brickH
+      const offsetX = row % 2 === 0 ? 0 : brickW / 2
+      for (let col = -1; col * brickW < width + brickW; col++) {
+        const bx = screenX + col * brickW + offsetX
+        const bw = brickW - 2  // gap for mortar
+        const bh = brickH - 2
+
+        // Pick color (deterministic based on position for consistency)
+        ctx.fillStyle = brickColors[(colorIdx++) % brickColors.length]
+        ctx.fillRect(bx + 1, by + 1, bw, bh)
+
+        // Highlight on top-left edges
+        ctx.fillStyle = highlightColor
+        ctx.fillRect(bx + 1, by + 1, bw, 2)
+        ctx.fillRect(bx + 1, by + 1, 2, bh)
+
+        // Shadow on bottom-right edges
+        ctx.fillStyle = shadowColor
+        ctx.fillRect(bx + 1, by + bh - 1, bw, 2)
+        ctx.fillRect(bx + bw - 1, by + 1, 2, bh)
+      }
+    }
+
+    ctx.restore()
+
+    // Top edge accent
+    ctx.fillStyle = "#FF8A65"
+    ctx.fillRect(screenX, y, width, 2)
+    // Bottom edge accent
+    ctx.fillStyle = "#FF8A65"
+    ctx.fillRect(screenX, y + h - 2, width, 2)
+
+    // Outline
+    ctx.strokeStyle = "#4E342E"
+    ctx.lineWidth = 2
+    ctx.strokeRect(screenX, y, width, h)
+  }
+
   const drawCloud = (ctx: CanvasRenderingContext2D, cloud: CloudObj, offset: number) => {
     const cx = cloud.x - offset * cloud.speed
     // Wrap clouds
@@ -521,33 +601,39 @@ export function GravityRunGame() {
   // ─── Collision detection ────────────────────────────────────────
   const checkCollision = useCallback((): boolean => {
     const py = playerYRef.current
-    const px = playerXRef.current - scrollOffsetRef.current
     const offset = scrollOffsetRef.current
     const margin = 4
 
-    const playerLeft = px + margin
-    const playerRight = px + PLAYER_SIZE - margin
+    const playerLeft = PLAYER_X + margin
+    const playerRight = PLAYER_X + PLAYER_SIZE - margin
     const playerTop = py + margin
     const playerBottom = py + PLAYER_SIZE - margin
-
-    const gravity = gravityRef.current
 
     // Check bottom ground segments
     for (const seg of bottomSegmentsRef.current) {
       const segLeft = seg.x - offset
       const segRight = segLeft + seg.width
-
-      // Is player overlapping this segment horizontally?
-      if (playerRight > segLeft && playerLeft < segRight) {
-        if (seg.hasGround) {
-          // Spike collision on bottom
-          if (seg.hasSpike && seg.spikeSide === "bottom") {
-            const spikeX = segLeft + seg.width / 2 - SPIKE_WIDTH / 2
-            const spikeRight = spikeX + SPIKE_WIDTH
-            const spikeTop = GAME_HEIGHT - GROUND_THICKNESS - SPIKE_HEIGHT
-            if (playerRight > spikeX && playerLeft < spikeRight && playerBottom > spikeTop) {
-              return true
-            }
+      if (playerRight > segLeft && playerLeft < segRight && seg.hasGround) {
+        // Spike
+        if (seg.hasSpike && seg.spikeSide === "bottom") {
+          const spikeX = segLeft + seg.width / 2 - SPIKE_WIDTH / 2
+          const spikeRight = spikeX + SPIKE_WIDTH
+          const spikeTop = GAME_HEIGHT - GROUND_THICKNESS - SPIKE_HEIGHT
+          if (playerRight > spikeX && playerLeft < spikeRight && playerBottom > spikeTop) return true
+        }
+        // Bump — only die if hitting the left side
+        if (seg.hasBump && seg.bumpOffset != null) {
+          const bx = segLeft + seg.bumpOffset
+          const bRight = bx + BUMP_WIDTH
+          const bTop = GAME_HEIGHT - GROUND_THICKNESS - BUMP_HEIGHT
+          const bBottom = GAME_HEIGHT - GROUND_THICKNESS
+          // Player overlaps bump area
+          if (playerRight > bx && playerLeft < bRight && playerBottom > bTop && playerTop < bBottom) {
+            // Side hit: player's right edge is within the left portion of the bump
+            const overlapFromLeft = playerRight - bx
+            const overlapFromTop = playerBottom - bTop
+            // If horizontal overlap is smaller, it's a side collision → die
+            if (overlapFromLeft < overlapFromTop) return true
           }
         }
       }
@@ -557,19 +643,41 @@ export function GravityRunGame() {
     for (const seg of topSegmentsRef.current) {
       const segLeft = seg.x - offset
       const segRight = segLeft + seg.width
-
-      if (playerRight > segLeft && playerLeft < segRight) {
-        if (seg.hasGround) {
-          // Spike collision on top
-          if (seg.hasSpike && seg.spikeSide === "top") {
-            const spikeX = segLeft + seg.width / 2 - SPIKE_WIDTH / 2
-            const spikeRight = spikeX + SPIKE_WIDTH
-            const spikeBottom = GROUND_THICKNESS + SPIKE_HEIGHT
-            if (playerRight > spikeX && playerLeft < spikeRight && playerTop < spikeBottom) {
-              return true
-            }
+      if (playerRight > segLeft && playerLeft < segRight && seg.hasGround) {
+        // Spike
+        if (seg.hasSpike && seg.spikeSide === "top") {
+          const spikeX = segLeft + seg.width / 2 - SPIKE_WIDTH / 2
+          const spikeRight = spikeX + SPIKE_WIDTH
+          const spikeBottom = GROUND_THICKNESS + SPIKE_HEIGHT
+          if (playerRight > spikeX && playerLeft < spikeRight && playerTop < spikeBottom) return true
+        }
+        // Bump — only die if hitting the bottom side (underside hit)
+        if (seg.hasBump && seg.bumpOffset != null) {
+          const bx = segLeft + seg.bumpOffset
+          const bRight = bx + BUMP_WIDTH
+          const bTop = GROUND_THICKNESS
+          const bBottom = GROUND_THICKNESS + BUMP_HEIGHT
+          if (playerRight > bx && playerLeft < bRight && playerBottom > bTop && playerTop < bBottom) {
+            const overlapFromLeft = playerRight - bx
+            const overlapFromBottom = bBottom - playerTop
+            if (overlapFromLeft < overlapFromBottom) return true
           }
         }
+      }
+    }
+
+    // Check floating platforms — side collision only
+    for (const plat of floatingPlatformsRef.current) {
+      const px = plat.x - offset
+      const pRight = px + plat.width
+      const pTop = plat.y
+      const pBottom = plat.y + PLATFORM_THICKNESS
+      if (playerRight > px && playerLeft < pRight && playerBottom > pTop && playerTop < pBottom) {
+        const overlapFromLeft = playerRight - px
+        const overlapFromTop = playerBottom - pTop
+        const overlapFromBottom = pBottom - playerTop
+        const vertOverlap = Math.min(overlapFromTop, overlapFromBottom)
+        if (overlapFromLeft < vertOverlap) return true
       }
     }
 
@@ -632,9 +740,8 @@ export function GravityRunGame() {
         playerYRef.current += velocityYRef.current * dt
 
         // Check if player is over solid ground before clamping
-        const curScreenX = playerXRef.current - scrollOffsetRef.current
-        const playerLeft = curScreenX + 4
-        const playerRight = curScreenX + PLAYER_SIZE - 4
+        const playerLeft = PLAYER_X + 4
+        const playerRight = PLAYER_X + PLAYER_SIZE - 4
         const currentOffset = scrollOffsetRef.current
 
         let hasBottomGround = false
@@ -663,69 +770,87 @@ export function GravityRunGame() {
         const topGroundY = GROUND_THICKNESS
 
         if (gravity === "down") {
-          if (hasBottomGround && playerYRef.current >= bottomGroundY) {
+          // Check if landing on top of a floating platform
+          let landedOnPlatform = false
+          for (const plat of floatingPlatformsRef.current) {
+            const px = plat.x - currentOffset
+            const pRight = px + plat.width
+            if (playerRight > px && playerLeft < pRight) {
+              const platLandY = plat.y - PLAYER_SIZE
+              if (playerYRef.current >= platLandY && playerYRef.current < plat.y + PLATFORM_THICKNESS && velocityYRef.current >= 0) {
+                playerYRef.current = platLandY
+                velocityYRef.current = 0
+                landedOnPlatform = true
+                break
+              }
+            }
+          }
+          // Check if landing on top of a bottom bump
+          let landedOnBump = false
+          if (!landedOnPlatform) {
+          for (const seg of bottomSegmentsRef.current) {
+            if (!seg.hasBump || !seg.hasGround || seg.bumpOffset == null) continue
+            const bx = seg.x - currentOffset + seg.bumpOffset
+            const bRight = bx + BUMP_WIDTH
+            const bTop = GAME_HEIGHT - GROUND_THICKNESS - BUMP_HEIGHT
+            if (playerRight > bx && playerLeft < bRight) {
+              const bumpLandY = bTop - PLAYER_SIZE
+              if (playerYRef.current >= bumpLandY && velocityYRef.current >= 0) {
+                playerYRef.current = bumpLandY
+                velocityYRef.current = 0
+                landedOnBump = true
+                break
+              }
+            }
+          }
+          if (!landedOnBump && !landedOnPlatform && hasBottomGround && playerYRef.current >= bottomGroundY) {
             playerYRef.current = bottomGroundY
             velocityYRef.current = 0
           }
+          }
         } else {
-          if (hasTopGround && playerYRef.current <= topGroundY) {
+          // Check if landing on underside of a floating platform
+          let landedOnPlatform = false
+          for (const plat of floatingPlatformsRef.current) {
+            const px = plat.x - currentOffset
+            const pRight = px + plat.width
+            if (playerRight > px && playerLeft < pRight) {
+              const platLandY = plat.y + PLATFORM_THICKNESS
+              if (playerYRef.current <= platLandY && playerYRef.current > plat.y - PLAYER_SIZE && velocityYRef.current <= 0) {
+                playerYRef.current = platLandY
+                velocityYRef.current = 0
+                landedOnPlatform = true
+                break
+              }
+            }
+          }
+          // Check if landing on underside of a top bump
+          let landedOnBump = false
+          if (!landedOnPlatform) {
+          for (const seg of topSegmentsRef.current) {
+            if (!seg.hasBump || !seg.hasGround || seg.bumpOffset == null) continue
+            const bx = seg.x - currentOffset + seg.bumpOffset
+            const bRight = bx + BUMP_WIDTH
+            const bBottom = GROUND_THICKNESS + BUMP_HEIGHT
+            if (playerRight > bx && playerLeft < bRight) {
+              const bumpLandY = bBottom
+              if (playerYRef.current <= bumpLandY && velocityYRef.current <= 0) {
+                playerYRef.current = bumpLandY
+                velocityYRef.current = 0
+                landedOnBump = true
+                break
+              }
+            }
+          }
+          if (!landedOnBump && !landedOnPlatform && hasTopGround && playerYRef.current <= topGroundY) {
             playerYRef.current = topGroundY
             velocityYRef.current = 0
           }
-        }
-
-        // ── Player horizontal movement ──
-        const baseSpeed = scrollSpeedRef.current * PLAYER_BASE_SPEED_RATIO
-        if (playerVelXRef.current > baseSpeed) {
-          playerVelXRef.current = Math.max(baseSpeed, playerVelXRef.current - PLAYER_X_DECEL * dt)
-        } else if (playerVelXRef.current < baseSpeed) {
-          playerVelXRef.current = Math.min(baseSpeed, playerVelXRef.current + PLAYER_X_DECEL * 2 * dt)
-        }
-        playerXRef.current += playerVelXRef.current * dt
-
-        // ── Bump collision ──
-        const bumpMargin = 4
-        const pLeft = playerXRef.current + bumpMargin
-        const pRight = playerXRef.current + PLAYER_SIZE - bumpMargin
-        const pTop = playerYRef.current + bumpMargin
-        const pBottom = playerYRef.current + PLAYER_SIZE - bumpMargin
-
-        for (const seg of bottomSegmentsRef.current) {
-          if (!seg.hasBump || !seg.hasGround || seg.bumpOffset == null) continue
-          const bumpWorldX = seg.x + seg.bumpOffset
-          const bLeft = bumpWorldX
-          const bRight = bumpWorldX + BUMP_WIDTH
-          const bTop = GAME_HEIGHT - GROUND_THICKNESS - BUMP_HEIGHT
-          const bBottom = GAME_HEIGHT - GROUND_THICKNESS
-          if (pRight > bLeft && pLeft < bRight && pBottom > bTop && pTop < bBottom) {
-            playerXRef.current = bLeft - PLAYER_SIZE + bumpMargin
-            playerVelXRef.current = 0
           }
         }
 
-        for (const seg of topSegmentsRef.current) {
-          if (!seg.hasBump || !seg.hasGround || seg.bumpOffset == null) continue
-          const bumpWorldX = seg.x + seg.bumpOffset
-          const bLeft = bumpWorldX
-          const bRight = bumpWorldX + BUMP_WIDTH
-          const bTop = GROUND_THICKNESS
-          const bBottom = GROUND_THICKNESS + BUMP_HEIGHT
-          if (pRight > bLeft && pLeft < bRight && pBottom > bTop && pTop < bBottom) {
-            playerXRef.current = bLeft - PLAYER_SIZE + bumpMargin
-            playerVelXRef.current = 0
-          }
-        }
-
-        // ── Screen position check ──
-        const screenX = playerXRef.current - scrollOffsetRef.current
-        // Don't let player go too far ahead of camera
-        if (screenX > GAME_WIDTH - PLAYER_SIZE - 20) {
-          playerXRef.current = scrollOffsetRef.current + GAME_WIDTH - PLAYER_SIZE - 20
-          playerVelXRef.current = Math.min(playerVelXRef.current, scrollSpeedRef.current)
-        }
-
-        // Die if player falls off screen (into a pit) or left out of bounds
-        if (playerYRef.current > GAME_HEIGHT + PLAYER_SIZE || playerYRef.current < -PLAYER_SIZE * 2 || screenX < -PLAYER_SIZE) {
+        // Die if player falls off screen (into a pit)
+        if (playerYRef.current > GAME_HEIGHT + PLAYER_SIZE || playerYRef.current < -PLAYER_SIZE * 2) {
           gameStateRef.current = "gameover"
           setGameState("gameover")
           playDeathSound()
@@ -750,11 +875,20 @@ export function GravityRunGame() {
           topSegmentsRef.current = generateSegments(furthestTop, 10, topSegmentsRef.current)
         }
 
+        // Extend floating platforms as needed
+        const furthestPlat = floatingPlatformsRef.current.length > 0
+          ? floatingPlatformsRef.current[floatingPlatformsRef.current.length - 1].x + floatingPlatformsRef.current[floatingPlatformsRef.current.length - 1].width
+          : 0
+        if (furthestPlat - offset < GAME_WIDTH * 3) {
+          floatingPlatformsRef.current = generateFloatingPlatforms(furthestPlat, 8, floatingPlatformsRef.current)
+        }
+
         // Cleanup off-screen segments
         bottomSegmentsRef.current = bottomSegmentsRef.current.filter(s => s.x + s.width - offset > -200)
         topSegmentsRef.current = topSegmentsRef.current.filter(s => s.x + s.width - offset > -200)
+        floatingPlatformsRef.current = floatingPlatformsRef.current.filter(p => p.x + p.width - offset > -200)
 
-        // Collision
+        // Collision (spikes & bumps)
         if (checkCollision()) {
           gameStateRef.current = "gameover"
           setGameState("gameover")
@@ -811,10 +945,16 @@ export function GravityRunGame() {
       // ── Side walls ──
       drawSideWalls(ctx)
 
+      // ── Draw floating platforms ──
+      for (const plat of floatingPlatformsRef.current) {
+        const px = plat.x - offset
+        if (px > GAME_WIDTH + 50 || px + plat.width < -50) continue
+        drawFloatingPlatform(ctx, px, plat.y, plat.width)
+      }
+
       // ── Player ──
       const isFlipped = gravityRef.current === "up"
-      const playerScreenX = playerXRef.current - scrollOffsetRef.current
-      drawPlayer(ctx, playerScreenX, playerYRef.current, isFlipped)
+      drawPlayer(ctx, PLAYER_X, playerYRef.current, isFlipped)
 
       // ── HUD ──
       // Score badge (top left)
@@ -882,7 +1022,7 @@ export function GravityRunGame() {
 
     animRef.current = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(animRef.current)
-  }, [canvasSize, highScore, checkCollision, generateSegments, playDeathSound, playScoreSound])
+  }, [canvasSize, highScore, checkCollision, generateSegments, generateFloatingPlatforms, playDeathSound, playScoreSound])
 
   // ─── Exit handler ───────────────────────────────────────────────
   const handleExit = useCallback(() => {
