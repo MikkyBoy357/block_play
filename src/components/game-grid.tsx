@@ -1,7 +1,7 @@
 "use client"
 
 import { GameCard } from "./game-card"
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, Ghost, Zap } from "lucide-react"
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, Ghost, Zap, Brain } from "lucide-react"
 
 const games = [
   {
@@ -94,6 +94,16 @@ const games = [
     players: "3.7k",
     image: "/brick-break-neon.svg",
   },
+  {
+    id: 10,
+    title: "Math Teaser",
+    slug: "math-teaser",
+    description: "Solve fast or fail. Beat the clock!",
+    icon: Brain,
+    color: "from-yellow-400 to-green-500",
+    players: "2.1k",
+    image: "/math-teaser.svg",
+  },
 ]
 
 export function GameGrid() {
@@ -107,7 +117,7 @@ export function GameGrid() {
           </div>
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>9 games available</span>
+            <span>10 games available</span>
           </div>
         </div>
 
