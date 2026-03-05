@@ -1,7 +1,7 @@
 "use client"
 
 import { GameCard } from "./game-card"
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, Ghost } from "lucide-react"
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, Ghost, Zap } from "lucide-react"
 
 const games = [
   {
@@ -84,6 +84,16 @@ const games = [
     players: "5.1k",
     image: "/pacman-arcade-neon.svg",
   },
+  {
+    id: 9,
+    title: "Brick Break",
+    slug: "brick-break",
+    description: "Smash bricks, survive the chaos",
+    icon: Zap,
+    color: "from-green-400 to-cyan-500",
+    players: "3.7k",
+    image: "/brick-break-neon.svg",
+  },
 ]
 
 export function GameGrid() {
@@ -97,7 +107,7 @@ export function GameGrid() {
           </div>
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>8 games available</span>
+            <span>9 games available</span>
           </div>
         </div>
 
