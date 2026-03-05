@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0a2e"/>
+      <stop offset="100%" style="stop-color:#0d0521"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <!-- Court lines -->
+  <rect x="100" y="100" width="600" height="400" fill="none" stroke="#ff6600" stroke-width="3" opacity="0.6" filter="url(#glow)"/>
+  <line x1="400" y1="100" x2="400" y2="500" stroke="#ff6600" stroke-width="2" opacity="0.5"/>
+  <circle cx="400" cy="300" r="80" fill="none" stroke="#ff6600" stroke-width="2" opacity="0.5"/>
+  <!-- Hoop -->
+  <rect x="340" y="130" width="120" height="8" rx="4" fill="#ff4400" filter="url(#glow)"/>
+  <circle cx="400" cy="200" r="35" fill="none" stroke="#ff8800" stroke-width="4" filter="url(#glow)"/>
+  <!-- Ball -->
+  <circle cx="400" cy="350" r="40" fill="#ff6600" opacity="0.8" filter="url(#glow)"/>
+  <path d="M 360 350 Q 400 320 440 350" fill="none" stroke="#cc4400" stroke-width="2"/>
+  <path d="M 400 310 L 400 390" fill="none" stroke="#cc4400" stroke-width="2"/>
+  <!-- Title -->
+  <text x="400" y="560" text-anchor="middle" font-family="monospace" font-size="28" font-weight="bold" fill="#ff8800" filter="url(#glow)">BASKETBALL TAP</text>
+</svg>
