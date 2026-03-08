@@ -76,7 +76,6 @@ const games = [
   },
   {
     id: 8,
-
     title: "Flappy Plane",
     slug: "flappy-plane",
     description: "Tap to fly through the pipes",
