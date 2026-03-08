@@ -1,7 +1,7 @@
 "use client"
 
 import { GameCard } from "./game-card"
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle } from "lucide-react"
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, Plane } from "lucide-react"
 
 const games = [
   {
@@ -74,6 +74,16 @@ const games = [
     players: "2.9k",
     image: "/dice-casino-game-futuristic-neon.jpg",
   },
+  {
+    id: 8,
+    title: "Flappy Plane",
+    slug: "flappy-plane",
+    description: "Tap to fly through the pipes",
+    icon: Plane,
+    color: "from-sky-500 to-blue-500",
+    players: "3.6k",
+    image: "/flappy_plane/images/splash.png",
+  },
 ]
 
 export function GameGrid() {
@@ -87,7 +97,7 @@ export function GameGrid() {
           </div>
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>7 games available</span>
+            <span>8 games available</span>
           </div>
         </div>
 
