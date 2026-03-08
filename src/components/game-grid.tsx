@@ -1,7 +1,7 @@
 "use client"
 
 import { GameCard } from "./game-card"
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane } from "lucide-react"
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane, Disc } from "lucide-react"
 
 const games = [
   {
@@ -93,6 +93,16 @@ const games = [
     color: "from-lime-500 to-green-500",
     players: "1.0k",
     image: "/gravity-run-card.svg",
+  },
+  {
+    id: 10,
+    title: "Air Hockey",
+    slug: "air-hockey",
+    description: "Glow puck, neon arena, 3 CPU levels",
+    icon: Disc,
+    color: "from-cyan-500 to-teal-500",
+    players: "0.8k",
+    image: "/air-hockey-glow-neon.svg",
   },
 ]
 
