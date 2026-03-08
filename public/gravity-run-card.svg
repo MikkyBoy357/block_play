@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0e27"/>
+      <stop offset="50%" stop-color="#111b3c"/>
+      <stop offset="100%" stop-color="#0d1229"/>
+    </linearGradient>
+    <linearGradient id="platformTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00ff88"/>
+      <stop offset="100%" stop-color="#00cc66"/>
+    </linearGradient>
+    <linearGradient id="platformBot" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00cc66"/>
+      <stop offset="100%" stop-color="#00ff88"/>
+    </linearGradient>
+    <linearGradient id="playerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#0091ea"/>
+    </linearGradient>
+    <filter id="neonGreen" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#00ff88" flood-opacity="0.6"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neonCyan" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#00e5ff" flood-opacity="0.7"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neonPurple" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="spikeGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ff1744"/>
+      <stop offset="100%" stop-color="#ff5252"/>
+    </linearGradient>
+    <linearGradient id="trailGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00e5ff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#00e5ff" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bgGrad)"/>
+  
+  <!-- Grid lines (subtle) -->
+  <g stroke="#1a2550" stroke-width="0.5" opacity="0.5">
+    <line x1="0" y1="100" x2="800" y2="100"/>
+    <line x1="0" y1="200" x2="800" y2="200"/>
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="0" y1="400" x2="800" y2="400"/>
+    <line x1="100" y1="0" x2="100" y2="500"/>
+    <line x1="200" y1="0" x2="200" y2="500"/>
+    <line x1="300" y1="0" x2="300" y2="500"/>
+    <line x1="400" y1="0" x2="400" y2="500"/>
+    <line x1="500" y1="0" x2="500" y2="500"/>
+    <line x1="600" y1="0" x2="600" y2="500"/>
+    <line x1="700" y1="0" x2="700" y2="500"/>
+  </g>
+  
+  <!-- Stars / particles -->
+  <circle cx="120" cy="60" r="1.5" fill="#fff" opacity="0.6"/>
+  <circle cx="340" cy="40" r="1" fill="#fff" opacity="0.4"/>
+  <circle cx="560" cy="80" r="1.5" fill="#00ff88" opacity="0.3"/>
+  <circle cx="700" cy="50" r="1" fill="#fff" opacity="0.5"/>
+  <circle cx="250" cy="110" r="1" fill="#00e5ff" opacity="0.4"/>
+  <circle cx="650" cy="130" r="1.5" fill="#fff" opacity="0.3"/>
+  <circle cx="80" cy="180" r="1" fill="#00ff88" opacity="0.5"/>
+  <circle cx="480" cy="160" r="1" fill="#fff" opacity="0.4"/>
+  
+  <!-- Bottom platform (ground) -->
+  <rect x="0" y="350" width="350" height="16" fill="url(#platformTop)" rx="2" filter="url(#neonGreen)" opacity="0.9"/>
+  <rect x="0" y="366" width="350" height="134" fill="#0d3320" opacity="0.6"/>
+  
+  <!-- Gap / pit -->
+  <!-- The gap is between x=350 and x=450 -->
+  
+  <!-- Spikes in pit -->
+  <g fill="url(#spikeGrad)" opacity="0.8">
+    <polygon points="360,500 370,460 380,500"/>
+    <polygon points="380,500 390,455 400,500"/>
+    <polygon points="400,500 410,460 420,500"/>
+    <polygon points="420,500 430,458 440,500"/>
+  </g>
+  
+  <!-- Top platform (ceiling, gravity flipped area) -->
+  <rect x="450" y="134" width="350" height="16" fill="url(#platformBot)" rx="2" filter="url(#neonGreen)" opacity="0.9"/>
+  <rect x="450" y="0" width="350" height="134" fill="#0d3320" opacity="0.6"/>
+  
+  <!-- Ceiling spikes on top platform area (obstacles) -->
+  <g fill="#ff1744" opacity="0.7">
+    <polygon points="550,150 558,180 566,150"/>
+    <polygon points="620,150 628,175 636,150"/>
+  </g>
+  
+  <!-- Continuation platform on right -->
+  <rect x="650" y="350" width="150" height="16" fill="url(#platformTop)" rx="2" filter="url(#neonGreen)" opacity="0.9"/>
+  <rect x="650" y="366" width="150" height="134" fill="#0d3320" opacity="0.6"/>
+  
+  <!-- Gravity flip arrow indicators -->
+  <g opacity="0.25">
+    <!-- Down arrows (normal gravity zone) -->
+    <text x="180" y="300" font-family="Arial" font-size="30" fill="#00ff88" text-anchor="middle">▼</text>
+    <!-- Up arrows (flipped gravity zone) -->
+    <text x="550" y="250" font-family="Arial" font-size="30" fill="#00ff88" text-anchor="middle">▲</text>
+  </g>
+  
+  <!-- Gravity flip indicator ring -->
+  <circle cx="400" cy="250" r="30" fill="none" stroke="#7c4dff" stroke-width="2" filter="url(#neonPurple)" opacity="0.6"/>
+  <text x="400" y="258" font-family="Arial" font-size="22" fill="#b388ff" text-anchor="middle" opacity="0.8">G</text>
+  
+  <!-- Player character (cube/runner) -->
+  <g filter="url(#neonCyan)">
+    <!-- Trail -->
+    <rect x="200" y="325" width="80" height="22" fill="url(#trailGrad)" rx="2" opacity="0.6"/>
+    <!-- Player body -->
+    <rect x="270" y="322" width="28" height="28" fill="url(#playerGrad)" rx="4"/>
+    <!-- Player eye -->
+    <rect x="288" y="330" width="5" height="5" fill="white" rx="1"/>
+    <!-- Motion lines -->
+    <line x1="265" y1="330" x2="250" y2="330" stroke="#00e5ff" stroke-width="1.5" opacity="0.5"/>
+    <line x1="265" y1="338" x2="245" y2="338" stroke="#00e5ff" stroke-width="1" opacity="0.35"/>
+    <line x1="265" y1="342" x2="255" y2="342" stroke="#00e5ff" stroke-width="1" opacity="0.25"/>
+  </g>
+  
+  <!-- Collectible orbs -->
+  <circle cx="320" cy="310" r="6" fill="#ffd740" opacity="0.8"/>
+  <circle cx="320" cy="310" r="3" fill="#fff" opacity="0.5"/>
+  <circle cx="500" cy="175" r="6" fill="#ffd740" opacity="0.8"/>
+  <circle cx="500" cy="175" r="3" fill="#fff" opacity="0.5"/>
+  <circle cx="700" cy="310" r="6" fill="#ffd740" opacity="0.8"/>
+  <circle cx="700" cy="310" r="3" fill="#fff" opacity="0.5"/>
+  
+  <!-- Speed lines (background) -->
+  <g stroke="#1a3a6c" stroke-width="1" opacity="0.3">
+    <line x1="0" y1="250" x2="60" y2="250"/>
+    <line x1="0" y1="280" x2="40" y2="280"/>
+    <line x1="0" y1="320" x2="55" y2="320"/>
+  </g>
+</svg>

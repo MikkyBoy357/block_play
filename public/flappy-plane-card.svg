@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a3a6c"/>
+      <stop offset="40%" stop-color="#2d6cb4"/>
+      <stop offset="70%" stop-color="#5ba3d9"/>
+      <stop offset="100%" stop-color="#87ceeb"/>
+    </linearGradient>
+    <linearGradient id="sunGlow" cx="50%" cy="30%">
+      <stop offset="0%" stop-color="#ffd700" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#ffd700" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="pipeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4a8f3f"/>
+      <stop offset="30%" stop-color="#6abf5e"/>
+      <stop offset="70%" stop-color="#5daa52"/>
+      <stop offset="100%" stop-color="#3d7a35"/>
+    </linearGradient>
+    <linearGradient id="pipeTip" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3d7a35"/>
+      <stop offset="20%" stop-color="#6abf5e"/>
+      <stop offset="80%" stop-color="#5daa52"/>
+      <stop offset="100%" stop-color="#2e6428"/>
+    </linearGradient>
+    <linearGradient id="planeBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e8e8e8"/>
+      <stop offset="50%" stop-color="#c0c0c0"/>
+      <stop offset="100%" stop-color="#a0a0a0"/>
+    </linearGradient>
+    <linearGradient id="groundGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8BC34A"/>
+      <stop offset="40%" stop-color="#7ab33e"/>
+      <stop offset="100%" stop-color="#5d8a2f"/>
+    </linearGradient>
+    <filter id="dropShadow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feOffset dx="2" dy="3"/>
+      <feFlood flood-color="#000" flood-opacity="0.3"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="planeGlow">
+      <feGaussianBlur stdDeviation="2"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Sky Background -->
+  <rect width="800" height="500" fill="url(#skyGrad)"/>
+  
+  <!-- Sun -->
+  <circle cx="650" cy="100" r="50" fill="#ffd700" opacity="0.25"/>
+  <circle cx="650" cy="100" r="35" fill="#ffec80" opacity="0.35"/>
+  <circle cx="650" cy="100" r="20" fill="#fff5c0" opacity="0.5"/>
+  
+  <!-- Clouds -->
+  <g opacity="0.6" fill="white">
+    <ellipse cx="150" cy="80" rx="70" ry="25"/>
+    <ellipse cx="120" cy="75" rx="40" ry="20"/>
+    <ellipse cx="185" cy="78" rx="45" ry="18"/>
+  </g>
+  <g opacity="0.4" fill="white">
+    <ellipse cx="500" cy="60" rx="55" ry="18"/>
+    <ellipse cx="475" cy="55" rx="35" ry="15"/>
+    <ellipse cx="530" cy="58" rx="30" ry="12"/>
+  </g>
+  <g opacity="0.3" fill="white">
+    <ellipse cx="350" cy="130" rx="45" ry="14"/>
+    <ellipse cx="325" cy="127" rx="30" ry="12"/>
+    <ellipse cx="380" cy="128" rx="25" ry="10"/>
+  </g>
+  
+  <!-- Pipe 1 (left) - top -->
+  <rect x="130" y="0" width="55" height="150" fill="url(#pipeGrad)" rx="3"/>
+  <rect x="123" y="145" width="69" height="30" fill="url(#pipeTip)" rx="4"/>
+  <!-- Pipe 1 - bottom -->
+  <rect x="123" y="320" width="69" height="30" fill="url(#pipeTip)" rx="4"/>
+  <rect x="130" y="348" width="55" height="90" fill="url(#pipeGrad)" rx="3"/>
+  
+  <!-- Pipe 2 (center) -->
+  <rect x="370" y="0" width="55" height="100" fill="url(#pipeGrad)" rx="3"/>
+  <rect x="363" y="95" width="69" height="30" fill="url(#pipeTip)" rx="4"/>
+  <!-- Pipe 2 - bottom -->
+  <rect x="363" y="280" width="69" height="30" fill="url(#pipeTip)" rx="4"/>
+  <rect x="370" y="308" width="55" height="130" fill="url(#pipeGrad)" rx="3"/>
+  
+  <!-- Pipe 3 (right) -->
+  <rect x="590" y="0" width="55" height="180" fill="url(#pipeGrad)" rx="3"/>
+  <rect x="583" y="175" width="69" height="30" fill="url(#pipeTip)" rx="4"/>
+  <!-- Pipe 3 - bottom -->
+  <rect x="583" y="350" width="69" height="30" fill="url(#pipeTip)" rx="4"/>
+  <rect x="590" y="378" width="55" height="60" fill="url(#pipeGrad)" rx="3"/>
+  
+  <!-- Ground -->
+  <rect x="0" y="435" width="800" height="65" fill="url(#groundGrad)"/>
+  <line x1="0" y1="435" x2="800" y2="435" stroke="#6a9f35" stroke-width="3"/>
+  <!-- Ground detail -->
+  <g fill="#6a9f35" opacity="0.5">
+    <rect x="20" y="440" width="40" height="3" rx="1"/>
+    <rect x="100" y="445" width="30" height="3" rx="1"/>
+    <rect x="200" y="442" width="50" height="3" rx="1"/>
+    <rect x="320" y="440" width="35" height="3" rx="1"/>
+    <rect x="430" y="444" width="45" height="3" rx="1"/>
+    <rect x="550" y="441" width="40" height="3" rx="1"/>
+    <rect x="660" y="443" width="30" height="3" rx="1"/>
+    <rect x="740" y="440" width="50" height="3" rx="1"/>
+  </g>
+  
+  <!-- Plane (centered, slightly tilted up) -->
+  <g transform="translate(280, 225) rotate(-8)" filter="url(#dropShadow)">
+    <!-- Fuselage -->
+    <ellipse cx="0" cy="0" rx="55" ry="14" fill="url(#planeBody)"/>
+    <!-- Nose -->
+    <path d="M50,-6 Q70,0 50,6" fill="#d32f2f"/>
+    <!-- Cockpit window -->
+    <ellipse cx="25" cy="-4" rx="10" ry="6" fill="#4fc3f7" opacity="0.8"/>
+    <ellipse cx="27" cy="-6" rx="5" ry="3" fill="white" opacity="0.3"/>
+    <!-- Top wing -->
+    <path d="M-10,-14 L10,-14 L25,-35 L-20,-35 Z" fill="#d32f2f" opacity="0.9"/>
+    <path d="M-20,-35 L25,-35 L28,-38 L-23,-38 Z" fill="#b71c1c"/>
+    <!-- Bottom wing -->
+    <path d="M-10,14 L10,14 L25,35 L-20,35 Z" fill="#d32f2f" opacity="0.9"/>
+    <path d="M-20,35 L25,35 L28,38 L-23,38 Z" fill="#b71c1c"/>
+    <!-- Tail -->
+    <path d="M-45,-5 L-55,-20 L-40,-5 Z" fill="#1565c0"/>
+    <path d="M-45,5 L-55,18 L-40,5 Z" fill="#1565c0" opacity="0.8"/>
+    <!-- Propeller blur -->
+    <ellipse cx="55" cy="0" rx="3" ry="18" fill="#666" opacity="0.4"/>
+    <!-- Engine lines -->
+    <line x1="-30" y1="-10" x2="-30" y2="10" stroke="#999" stroke-width="1" opacity="0.4"/>
+  </g>
+  
+  <!-- Motion lines behind plane -->
+  <g stroke="white" stroke-width="1.5" opacity="0.3">
+    <line x1="180" y1="220" x2="210" y2="222"/>
+    <line x1="175" y1="230" x2="215" y2="230"/>
+    <line x1="180" y1="240" x2="205" y2="238"/>
+  </g>
+  
+  <!-- Score display -->
+  <g filter="url(#dropShadow)">
+    <text x="400" y="55" font-family="'Arial Black', Arial, sans-serif" font-size="42" font-weight="900" fill="white" text-anchor="middle" stroke="#543847" stroke-width="3">7</text>
+  </g>
+</svg>
