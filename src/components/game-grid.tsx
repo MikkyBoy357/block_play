@@ -32,7 +32,7 @@ const games = [
     icon: Circle,
     color: "from-orange-500 to-red-500",
     players: "1.2k",
-    image: "/basketball-court-game-neon.jpg",
+    image: "/basketball-court-game-neon.svg",
   },
   {
     id: 4,
@@ -83,7 +83,7 @@ const games = [
     icon: Plane,
     color: "from-sky-500 to-blue-500",
     players: "3.6k",
-    image: "/flappy_plane/images/splash.png",
+    image: "/flappy-plane-card.svg",
   },
   {
     id: 9,
@@ -93,7 +93,7 @@ const games = [
     icon: ArrowUpDown,
     color: "from-lime-500 to-green-500",
     players: "1.0k",
-    image: "/gravity-run-pixel-art.jpg",
+    image: "/gravity-run-card.svg",
   },
 ]
 
