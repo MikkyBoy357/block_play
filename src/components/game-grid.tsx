@@ -1,7 +1,7 @@
 "use client"
 
 import { GameCard } from "./game-card"
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, Ghost, Zap, Brain } from "lucide-react"
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, Ghost, Zap, Brain, Grid3X3, Flag } from "lucide-react"
 
 const games = [
   {
@@ -104,6 +104,26 @@ const games = [
     players: "2.1k",
     image: "/math-teaser.svg",
   },
+  {
+    id: 11,
+    title: "Tetris",
+    slug: "tetris",
+    description: "Stack blocks, clear lines, chase the high score",
+    icon: Grid3X3,
+    color: "from-cyan-400 to-blue-500",
+    players: "4.5k",
+    image: "/tetris-neon.svg",
+  },
+  {
+    id: 12,
+    title: "Flag Quiz",
+    slug: "flag-quiz",
+    description: "Name the country from its flag!",
+    icon: Flag,
+    color: "from-red-400 to-blue-500",
+    players: "1.9k",
+    image: "/flag-quiz-world.svg",
+  },
 ]
 
 export function GameGrid() {
@@ -117,7 +137,7 @@ export function GameGrid() {
           </div>
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>10 games available</span>
+            <span>12 games available</span>
           </div>
         </div>
 
