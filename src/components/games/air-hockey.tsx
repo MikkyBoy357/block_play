@@ -53,9 +53,9 @@ const GOAL_WIDTH_RATIO = 0.36
 const SCORE_PAUSE_MS = 1200
 
 const DIFFICULTY_CONFIG = {
-    easy: { speed: 2.2, reaction: 0.025, error: 40, aggression: 0.15, label: "Easy", color: "#00ff88" },
-    medium: { speed: 3.8, reaction: 0.055, error: 18, aggression: 0.35, label: "Medium", color: "#ffaa00" },
-    hard: { speed: 5.5, reaction: 0.1, error: 6, aggression: 0.6, label: "Hard", color: "#ff3366" },
+    easy: { speed: 3.5, reaction: 0.06, error: 28, aggression: 0.3, predict: 3, label: "Easy", color: "#00ff88" },
+    medium: { speed: 5.5, reaction: 0.11, error: 12, aggression: 0.55, predict: 6, label: "Medium", color: "#ffaa00" },
+    hard: { speed: 8.0, reaction: 0.18, error: 3, aggression: 0.8, predict: 10, label: "Hard", color: "#ff3366" },
 }
 
 const NEON_CYAN = "#00f0ff"
@@ -63,6 +63,12 @@ const NEON_PINK = "#ff2d7b"
 const NEON_GREEN = "#39ff14"
 const TABLE_BG = "#0a0e1a"
 const TABLE_LINE = "rgba(0, 240, 255, 0.12)"
+
+// Edge quadrant colors (matching reference)
+const EDGE_RED = "#ff1a1a"
+const EDGE_YELLOW = "#ffe600"
+const EDGE_BLUE = "#1a8cff"
+const EDGE_GREEN = "#00ff66"
 
 export function AirHockeyGame() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -335,43 +341,53 @@ export function AirHockeyGame() {
         const puck = puckRef.current
         const halfH = h / 2
 
-        // Update error offset periodically
+        // Update error offset periodically — sharper = less drift
         cpuErrorTimerRef.current -= dt
         if (cpuErrorTimerRef.current <= 0) {
-            cpuErrorTimerRef.current = 0.5 + Math.random() * 1.0
+            cpuErrorTimerRef.current = 0.2 + Math.random() * 0.5
             cpuErrorRef.current = {
                 x: (Math.random() - 0.5) * cfg.error * 2,
                 y: (Math.random() - 0.5) * cfg.error,
             }
         }
 
+        // Predict where puck will be in N frames
+        const predictX = puck.x + puck.vx * cfg.predict
+        const predictY = puck.y + puck.vy * cfg.predict
+
         // Determine target
         let targetX = w / 2
-        let targetY = h * 0.18
+        let targetY = h * 0.16
 
-        if (puck.y < halfH) {
-            // Puck in CPU half - go to puck
-            targetX = puck.x + cpuErrorRef.current.x
-            targetY = puck.y - PADDLE_RADIUS * 0.5 + cpuErrorRef.current.y
-
-            // If puck moving toward CPU goal, be more aggressive
-            if (puck.vy < -2) {
-                targetX = puck.x + puck.vx * 3 + cpuErrorRef.current.x
-                targetY = puck.y + puck.vy * 2 + cpuErrorRef.current.y
+        if (puck.y < halfH + 60) {
+            // Puck in or approaching CPU half — actively intercept
+            if (puck.vy < 0) {
+                // Moving toward CPU goal — hard intercept
+                targetX = predictX + cpuErrorRef.current.x
+                targetY = Math.min(predictY - PADDLE_RADIUS * 0.3, puck.y - PADDLE_RADIUS) + cpuErrorRef.current.y
+            } else {
+                // Puck drifting but in CPU half — attack it
+                targetX = puck.x + puck.vx * (cfg.predict * 0.5) + cpuErrorRef.current.x
+                targetY = puck.y - PADDLE_RADIUS * 0.4 + cpuErrorRef.current.y
             }
-        } else if (puck.vy < 0 && puck.y < halfH + 80) {
-            // Puck approaching - intercept
-            targetX = puck.x + puck.vx * 5 + cpuErrorRef.current.x
-            targetY = halfH * 0.4
-        } else {
-            // Puck far away - return to defensive position
-            targetX = w / 2 + cpuErrorRef.current.x * 0.5
-            targetY = h * 0.15
 
-            // Slight aggression toward center
-            if (cfg.aggression > 0.3 && puck.y > halfH) {
-                targetY = h * 0.22
-                targetX = puck.x * cfg.aggression + w / 2 * (1 - cfg.aggression) + cpuErrorRef.current.x
+            // Aggressive striking: if close enough, push toward puck to smack it
+            const dxToPuck = puck.x - cpu.x
+            const dyToPuck = puck.y - cpu.y
+            const distToPuck = Math.sqrt(dxToPuck * dxToPuck + dyToPuck * dyToPuck)
+            if (distToPuck < PADDLE_RADIUS * 4 && puck.y < halfH && cfg.aggression > 0.2) {
+                targetX = puck.x + puck.vx * 1.5
+                targetY = puck.y + PADDLE_RADIUS * 0.3
+            }
+        } else {
+            // Puck in player half — position defensively but track laterally
+            targetX = puck.x * cfg.aggression + w / 2 * (1 - cfg.aggression) + cpuErrorRef.current.x * 0.3
+            targetY = h * 0.15 + (halfH * 0.1 * cfg.aggression)
+
+            // If puck heading back soon, pre-position
+            if (puck.vy < -1) {
+                targetX = predictX + cpuErrorRef.current.x * 0.5
+                targetY = halfH * 0.35
             }
         }
 
@@ -381,14 +397,15 @@ export function AirHockeyGame() {
 
         cpuTargetRef.current = { x: targetX, y: targetY }
 
-        // Move toward target
+        // Move toward target — responsive and snappy
         const dx = targetX - cpu.x
         const dy = targetY - cpu.y
         const dist = Math.sqrt(dx * dx + dy * dy)
 
-        if (dist > 1) {
+        if (dist > 0.5) {
             const moveSpeed = cfg.speed * cfg.reaction * 60 * dt
-            const factor = Math.min(moveSpeed / dist, 1)
+            const urgency = puck.y < halfH ? 1.5 : 1.0
+            const factor = Math.min((moveSpeed * urgency) / dist, 1)
             const oldX = cpu.x
             const oldY = cpu.y
             cpu.x += dx * factor
@@ -396,8 +413,8 @@ export function AirHockeyGame() {
             cpu.vx = cpu.x - oldX
             cpu.vy = cpu.y - oldY
         } else {
-            cpu.vx *= 0.8
-            cpu.vy *= 0.8
+            cpu.vx *= 0.7
+            cpu.vy *= 0.7
         }
     }, [])
 
@@ -484,18 +501,32 @@ export function AirHockeyGame() {
                     spawnParticles(puck.x, puck.y, NEON_GREEN, 1, speed * 0.3)
                 }
 
-                // Wall collisions
+                // Wall collisions — elaborate glow burst matching edge colors
                 if (puck.x - puck.radius < 0) {
                     puck.x = puck.radius
                     puck.vx = Math.abs(puck.vx) * WALL_BOUNCE
                     playWallSound()
-                    spawnParticles(puck.x, puck.y, NEON_CYAN, 8, 2)
+                    const hitStr = Math.min(Math.abs(puck.vx) / PUCK_MAX_SPEED, 1)
+                    const leftColor = puck.y < halfH ? EDGE_RED : EDGE_BLUE
+                    spawnParticles(puck.x, puck.y, leftColor, 18 + Math.floor(hitStr * 20), 3 + hitStr * 4)
+                    spawnParticles(puck.x, puck.y, "#ffffff", 6, 2)
+                    for (let i = 0; i < 8; i++) {
+                        const spread = (Math.random() - 0.5) * 60
+                        spawnParticles(puck.x, puck.y + spread, leftColor, 2, 1.5)
+                    }
                 }
                 if (puck.x + puck.radius > w) {
                     puck.x = w - puck.radius
                     puck.vx = -Math.abs(puck.vx) * WALL_BOUNCE
                     playWallSound()
-                    spawnParticles(puck.x, puck.y, NEON_CYAN, 8, 2)
+                    const hitStr = Math.min(Math.abs(puck.vx) / PUCK_MAX_SPEED, 1)
+                    const rightColor = puck.y < halfH ? EDGE_YELLOW : EDGE_GREEN
+                    spawnParticles(puck.x, puck.y, rightColor, 18 + Math.floor(hitStr * 20), 3 + hitStr * 4)
+                    spawnParticles(puck.x, puck.y, "#ffffff", 6, 2)
+                    for (let i = 0; i < 8; i++) {
+                        const spread = (Math.random() - 0.5) * 60
+                        spawnParticles(puck.x, puck.y + spread, rightColor, 2, 1.5)
+                    }
                 }
 
                 // Top/bottom walls with goal openings
@@ -517,7 +548,14 @@ export function AirHockeyGame() {
                         puck.y = puck.radius
                         puck.vy = Math.abs(puck.vy) * WALL_BOUNCE
                         playWallSound()
-                        spawnParticles(puck.x, puck.y, NEON_CYAN, 8)
+                        const hitStr = Math.min(Math.abs(puck.vy) / PUCK_MAX_SPEED, 1)
+                        const topColor = puck.x < w / 2 ? EDGE_RED : EDGE_YELLOW
+                        spawnParticles(puck.x, puck.y, topColor, 18 + Math.floor(hitStr * 20), 3 + hitStr * 4)
+                        spawnParticles(puck.x, puck.y, "#ffffff", 6, 2)
+                        for (let i = 0; i < 8; i++) {
+                            const spread = (Math.random() - 0.5) * 60
+                            spawnParticles(puck.x + spread, puck.y, topColor, 2, 1.5)
+                        }
                     }
                 }
 
@@ -539,7 +577,14 @@ export function AirHockeyGame() {
                         puck.y = h - puck.radius
                         puck.vy = -Math.abs(puck.vy) * WALL_BOUNCE
                         playWallSound()
-                        spawnParticles(puck.x, puck.y, NEON_PINK, 8)
+                        const hitStr = Math.min(Math.abs(puck.vy) / PUCK_MAX_SPEED, 1)
+                        const botColor = puck.x < w / 2 ? EDGE_BLUE : EDGE_GREEN
+                        spawnParticles(puck.x, puck.y, botColor, 18 + Math.floor(hitStr * 20), 3 + hitStr * 4)
+                        spawnParticles(puck.x, puck.y, "#ffffff", 6, 2)
+                        for (let i = 0; i < 8; i++) {
+                            const spread = (Math.random() - 0.5) * 60
+                            spawnParticles(puck.x + spread, puck.y, botColor, 2, 1.5)
+                        }
                     }
                 }
 
@@ -677,65 +722,129 @@ export function AirHockeyGame() {
             ctx.fillStyle = goalGlowBot
             ctx.fillRect(goalLeft, h - 30, goalW, 30)
 
-            // Goal posts
-            ctx.lineWidth = 3
-            // Top
-            ctx.strokeStyle = NEON_CYAN
-            ctx.shadowColor = NEON_CYAN
-            ctx.shadowBlur = 10
-            ctx.beginPath()
-            ctx.moveTo(goalLeft, 0)
-            ctx.lineTo(goalLeft, 15)
-            ctx.stroke()
-            ctx.beginPath()
-            ctx.moveTo(goalRight, 0)
-            ctx.lineTo(goalRight, 15)
-            ctx.stroke()
-
-            // Bottom
-            ctx.strokeStyle = NEON_PINK
-            ctx.shadowColor = NEON_PINK
-            ctx.beginPath()
-            ctx.moveTo(goalLeft, h)
-            ctx.lineTo(goalLeft, h - 15)
-            ctx.stroke()
-            ctx.beginPath()
-            ctx.moveTo(goalRight, h)
-            ctx.lineTo(goalRight, h - 15)
-            ctx.stroke()
-
+            // Goal post stubs
             ctx.shadowBlur = 0
 
-            // Border
-            ctx.strokeStyle = "rgba(0, 240, 255, 0.15)"
-            ctx.lineWidth = 2
-            // Top wall segments (with gap for goal)
-            ctx.beginPath()
-            ctx.moveTo(0, 0)
-            ctx.lineTo(goalLeft, 0)
-            ctx.stroke()
-            ctx.beginPath()
-            ctx.moveTo(goalRight, 0)
-            ctx.lineTo(w, 0)
-            ctx.stroke()
-            // Bottom wall segments
-            ctx.beginPath()
-            ctx.moveTo(0, h)
-            ctx.lineTo(goalLeft, h)
-            ctx.stroke()
-            ctx.beginPath()
-            ctx.moveTo(goalRight, h)
-            ctx.lineTo(w, h)
-            ctx.stroke()
-            // Side walls
-            ctx.beginPath()
-            ctx.moveTo(0, 0)
-            ctx.lineTo(0, h)
-            ctx.stroke()
-            ctx.beginPath()
-            ctx.moveTo(w, 0)
-            ctx.lineTo(w, h)
-            ctx.stroke()
+            // ── Neon tube edges (4 quadrant colors) ──
+            const drawNeonTube = (x1: number, y1: number, x2: number, y2: number, color: string) => {
+                // Layer 1: Ultra-wide atmospheric glow
+                ctx.save()
+                ctx.shadowColor = color
+                ctx.shadowBlur = 45
+                ctx.strokeStyle = color
+                ctx.globalAlpha = 0.15
+                ctx.lineWidth = 22
+                ctx.lineCap = "round"
+                ctx.beginPath()
+                ctx.moveTo(x1, y1)
+                ctx.lineTo(x2, y2)
+                ctx.stroke()
+                ctx.restore()
+
+                // Layer 2: Wide glow
+                ctx.save()
+                ctx.shadowColor = color
+                ctx.shadowBlur = 30
+                ctx.strokeStyle = color
+                ctx.globalAlpha = 0.35
+                ctx.lineWidth = 12
+                ctx.lineCap = "round"
+                ctx.beginPath()
+                ctx.moveTo(x1, y1)
+                ctx.lineTo(x2, y2)
+                ctx.stroke()
+                ctx.restore()
+
+                // Layer 3: Solid color tube
+                ctx.save()
+                ctx.shadowColor = color
+                ctx.shadowBlur = 15
+                ctx.strokeStyle = color
+                ctx.globalAlpha = 0.85
+                ctx.lineWidth = 5
+                ctx.lineCap = "round"
+                ctx.beginPath()
+                ctx.moveTo(x1, y1)
+                ctx.lineTo(x2, y2)
+                ctx.stroke()
+                ctx.restore()
+
+                // Layer 4: White-hot center core
+                ctx.save()
+                ctx.shadowColor = "#ffffff"
+                ctx.shadowBlur = 4
+                ctx.strokeStyle = "#ffffff"
+                ctx.globalAlpha = 0.7
+                ctx.lineWidth = 1.5
+                ctx.lineCap = "round"
+                ctx.beginPath()
+                ctx.moveTo(x1, y1)
+                ctx.lineTo(x2, y2)
+                ctx.stroke()
+                ctx.restore()
+            }
+
+            const drawCornerGlow = (cx: number, cy: number, color: string) => {
+                // Circular glow at corner joints
+                ctx.save()
+                ctx.shadowColor = color
+                ctx.shadowBlur = 35
+                const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 16)
+                cg.addColorStop(0, "#ffffff")
+                cg.addColorStop(0.3, color)
+                cg.addColorStop(1, "transparent")
+                ctx.fillStyle = cg
+                ctx.globalAlpha = 0.8
+                ctx.beginPath()
+                ctx.arc(cx, cy, 16, 0, Math.PI * 2)
+                ctx.fill()
+                ctx.restore()
+
+                // Bright center dot
+                ctx.save()
+                ctx.shadowColor = color
+                ctx.shadowBlur = 15
+                ctx.fillStyle = "#ffffff"
+                ctx.globalAlpha = 0.9
+                ctx.beginPath()
+                ctx.arc(cx, cy, 3, 0, Math.PI * 2)
+                ctx.fill()
+                ctx.restore()
+            }
+
+            // Left wall: Red top half, Blue bottom half
+            drawNeonTube(2, 0, 2, halfH, EDGE_RED)
+            drawNeonTube(2, halfH, 2, h, EDGE_BLUE)
+
+            // Right wall: Yellow top half, Green bottom half
+            drawNeonTube(w - 2, 0, w - 2, halfH, EDGE_YELLOW)
+            drawNeonTube(w - 2, halfH, w - 2, h, EDGE_GREEN)
+
+            // Top wall segments (with gap for goal): left=Red, right=Yellow
+            drawNeonTube(0, 2, goalLeft, 2, EDGE_RED)
+            drawNeonTube(goalRight, 2, w, 2, EDGE_YELLOW)
+
+            // Goal post stubs (top)
+            drawNeonTube(goalLeft, 2, goalLeft, 18, EDGE_RED)
+            drawNeonTube(goalRight, 2, goalRight, 18, EDGE_YELLOW)
+
+            // Bottom wall segments (with gap for goal): left=Blue, right=Green
+            drawNeonTube(0, h - 2, goalLeft, h - 2, EDGE_BLUE)
+            drawNeonTube(goalRight, h - 2, w, h - 2, EDGE_GREEN)
+
+            // Goal post stubs (bottom)
+            drawNeonTube(goalLeft, h - 2, goalLeft, h - 18, EDGE_BLUE)
+            drawNeonTube(goalRight, h - 2, goalRight, h - 18, EDGE_GREEN)
+
+            // Corner glows
+            drawCornerGlow(2, 2, EDGE_RED)         // top-left
+            drawCornerGlow(w - 2, 2, EDGE_YELLOW)  // top-right
+            drawCornerGlow(2, h - 2, EDGE_BLUE)    // bottom-left
+            drawCornerGlow(w - 2, h - 2, EDGE_GREEN) // bottom-right
+
+            // Mid-wall junction markers where colors meet on side walls
+            drawCornerGlow(2, halfH, EDGE_RED)     // left mid - blend
+            drawCornerGlow(w - 2, halfH, EDGE_YELLOW) // right mid - blend
 
             ctx.restore()
 
