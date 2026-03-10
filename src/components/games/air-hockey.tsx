@@ -53,9 +53,9 @@ const GOAL_WIDTH_RATIO = 0.36
 const SCORE_PAUSE_MS = 1200
 
 const DIFFICULTY_CONFIG = {
-    easy: { speed: 3.5, reaction: 0.06, error: 28, aggression: 0.3, predict: 3, label: "Easy", color: "#00ff88" },
-    medium: { speed: 5.5, reaction: 0.11, error: 12, aggression: 0.55, predict: 6, label: "Medium", color: "#ffaa00" },
-    hard: { speed: 8.0, reaction: 0.18, error: 3, aggression: 0.8, predict: 10, label: "Hard", color: "#ff3366" },
+    easy: { speed: 5.0, reaction: 0.10, error: 18, aggression: 0.45, predict: 5, strikeRange: 3.5, label: "Easy", color: "#00ff88" },
+    medium: { speed: 7.5, reaction: 0.18, error: 7, aggression: 0.7, predict: 9, strikeRange: 4.5, label: "Medium", color: "#ffaa00" },
+    hard: { speed: 11.0, reaction: 0.28, error: 1.5, aggression: 0.95, predict: 14, strikeRange: 6, label: "Hard", color: "#ff3366" },
 }
 
 const NEON_CYAN = "#00f0ff"
@@ -334,60 +334,106 @@ export function AirHockeyGame() {
         draggingRef.current = false
     }, [])
 
-    // CPU AI
+    // CPU AI — predict puck position accounting for wall bounces
+    const predictPuckPos = useCallback((px: number, py: number, pvx: number, pvy: number, frames: number, w: number, h: number) => {
+        let x = px, y = py, vx = pvx, vy = pvy
+        for (let i = 0; i < frames; i++) {
+            x += vx
+            y += vy
+            vx *= PUCK_FRICTION
+            vy *= PUCK_FRICTION
+            if (x - PUCK_RADIUS < 0) { x = PUCK_RADIUS; vx = Math.abs(vx) }
+            if (x + PUCK_RADIUS > w) { x = w - PUCK_RADIUS; vx = -Math.abs(vx) }
+            if (y - PUCK_RADIUS < 0) { y = PUCK_RADIUS; vy = Math.abs(vy) }
+            if (y + PUCK_RADIUS > h) { y = h - PUCK_RADIUS; vy = -Math.abs(vy) }
+        }
+        return { x, y }
+    }, [])
+
     const updateCPU = useCallback((w: number, h: number, dt: number) => {
         const cfg = DIFFICULTY_CONFIG[difficultyRef.current]
         const cpu = cpuRef.current
         const puck = puckRef.current
         const halfH = h / 2
 
-        // Update error offset periodically — sharper = less drift
+        // Update error offset periodically — less drift at higher difficulties
         cpuErrorTimerRef.current -= dt
         if (cpuErrorTimerRef.current <= 0) {
-            cpuErrorTimerRef.current = 0.2 + Math.random() * 0.5
+            cpuErrorTimerRef.current = 0.15 + Math.random() * 0.3
             cpuErrorRef.current = {
                 x: (Math.random() - 0.5) * cfg.error * 2,
                 y: (Math.random() - 0.5) * cfg.error,
             }
         }
 
-        // Predict where puck will be in N frames
-        const predictX = puck.x + puck.vx * cfg.predict
-        const predictY = puck.y + puck.vy * cfg.predict
+        // Full physics prediction (accounts for wall bounces)
+        const predicted = predictPuckPos(puck.x, puck.y, puck.vx, puck.vy, cfg.predict, w, h)
+        const puckSpeed = Math.sqrt(puck.vx * puck.vx + puck.vy * puck.vy)
 
-        // Determine target
         let targetX = w / 2
-        let targetY = h * 0.16
+        let targetY = h * 0.14
 
-        if (puck.y < halfH + 60) {
-            // Puck in or approaching CPU half — actively intercept
+        const dxToPuck = puck.x - cpu.x
+        const dyToPuck = puck.y - cpu.y
+        const distToPuck = Math.sqrt(dxToPuck * dxToPuck + dyToPuck * dyToPuck)
+
+        if (puck.y < halfH + 80) {
+            // Puck in or near CPU half
             if (puck.vy < 0) {
-                // Moving toward CPU goal — hard intercept
-                targetX = predictX + cpuErrorRef.current.x
-                targetY = Math.min(predictY - PADDLE_RADIUS * 0.3, puck.y - PADDLE_RADIUS) + cpuErrorRef.current.y
+                // Moving toward CPU goal — hard intercept with prediction
+                targetX = predicted.x + cpuErrorRef.current.x
+                targetY = Math.min(predicted.y - PADDLE_RADIUS * 0.2, puck.y - PADDLE_RADIUS * 0.8) + cpuErrorRef.current.y
             } else {
-                // Puck drifting but in CPU half — attack it
-                targetX = puck.x + puck.vx * (cfg.predict * 0.5) + cpuErrorRef.current.x
-                targetY = puck.y - PADDLE_RADIUS * 0.4 + cpuErrorRef.current.y
+                // Puck in CPU half moving away — attack it aggressively
+                targetX = puck.x + puck.vx * (cfg.predict * 0.4) + cpuErrorRef.current.x
+                targetY = puck.y + PADDLE_RADIUS * 0.5 + cpuErrorRef.current.y
             }
 
-            // Aggressive striking: if close enough, push toward puck to smack it
-            const dxToPuck = puck.x - cpu.x
-            const dyToPuck = puck.y - cpu.y
-            const distToPuck = Math.sqrt(dxToPuck * dxToPuck + dyToPuck * dyToPuck)
-            if (distToPuck < PADDLE_RADIUS * 4 && puck.y < halfH && cfg.aggression > 0.2) {
-                targetX = puck.x + puck.vx * 1.5
-                targetY = puck.y + PADDLE_RADIUS * 0.3
+            // Aggressive striking: slam into puck when close
+            // But NOT if puck is stuck near a corner/wall — back off to center instead
+            const nearLeftWall = puck.x < PUCK_RADIUS * 4
+            const nearRightWall = puck.x > w - PUCK_RADIUS * 4
+            const nearTopWall = puck.y < PUCK_RADIUS * 4
+            const puckInCorner = (nearLeftWall || nearRightWall) && nearTopWall
+            const puckSlow = puckSpeed < 2
+
+            if (puckInCorner && puckSlow) {
+                // Puck stuck in corner — position behind it to push it toward center/down
+                targetX = w / 2
+                targetY = puck.y - PADDLE_RADIUS * 1.5
+            } else if (distToPuck < PADDLE_RADIUS * cfg.strikeRange && puck.y < halfH) {
+                // Aim to strike toward player goal, offset to angle the shot
+                // Avoid aiming into the wall — always push toward center
+                const angleOffset = (puck.x > w / 2 ? -1 : 1) * PADDLE_RADIUS * 0.4 * cfg.aggression
+                targetX = puck.x + puck.vx * 2 + angleOffset
+                targetY = puck.y + PADDLE_RADIUS * 0.6
+
+                // If target would push puck into a side wall, redirect toward center
+                if (targetX < PADDLE_RADIUS * 2 || targetX > w - PADDLE_RADIUS * 2) {
+                    targetX = w / 2
+                }
             }
         } else {
-            // Puck in player half — position defensively but track laterally
-            targetX = puck.x * cfg.aggression + w / 2 * (1 - cfg.aggression) + cpuErrorRef.current.x * 0.3
-            targetY = h * 0.15 + (halfH * 0.1 * cfg.aggression)
+            // Puck deep in player half
+            // Shadow the puck laterally while staying defensive
+            targetX = predicted.x * cfg.aggression + w / 2 * (1 - cfg.aggression) + cpuErrorRef.current.x * 0.2
+            targetY = h * 0.12 + (halfH * 0.15 * cfg.aggression)
 
-            // If puck heading back soon, pre-position
-            if (puck.vy < -1) {
-                targetX = predictX + cpuErrorRef.current.x * 0.5
-                targetY = halfH * 0.35
+            // If puck heading back toward CPU, rush to intercept early
+            if (puck.vy < -0.5) {
+                const longPredict = predictPuckPos(puck.x, puck.y, puck.vx, puck.vy, cfg.predict * 2, w, h)
+                targetX = longPredict.x + cpuErrorRef.current.x * 0.3
+                targetY = halfH * 0.3
+            }
+
+            // On hard, subtly guard the goal opening
+            if (cfg.aggression > 0.8) {
+                const goalW = w * GOAL_WIDTH_RATIO
+                const goalCenter = w / 2
+                const puckAngle = Math.atan2(puck.vy, puck.vx)
+                if (puck.vy < 0) {
+                    targetX = goalCenter + Math.cos(puckAngle) * goalW * 0.3
+                }
             }
         }
 
@@ -397,14 +443,15 @@ export function AirHockeyGame() {
 
         cpuTargetRef.current = { x: targetX, y: targetY }
 
-        // Move toward target — responsive and snappy
+        // Move toward target — very responsive
         const dx = targetX - cpu.x
         const dy = targetY - cpu.y
         const dist = Math.sqrt(dx * dx + dy * dy)
 
-        if (dist > 0.5) {
+        if (dist > 0.3) {
             const moveSpeed = cfg.speed * cfg.reaction * 60 * dt
-            const urgency = puck.y < halfH ? 1.5 : 1.0
+            // Urgency increases when puck is in CPU half or approaching fast
+            const urgency = puck.y < halfH ? 2.0 : (puck.vy < -2 ? 1.8 : 1.0)
             const factor = Math.min((moveSpeed * urgency) / dist, 1)
             const oldX = cpu.x
             const oldY = cpu.y
@@ -413,10 +460,10 @@ export function AirHockeyGame() {
             cpu.vx = cpu.x - oldX
             cpu.vy = cpu.y - oldY
         } else {
-            cpu.vx *= 0.7
-            cpu.vy *= 0.7
+            cpu.vx *= 0.6
+            cpu.vy *= 0.6
         }
-    }, [])
+    }, [predictPuckPos])
 
     // Main game loop
     useEffect(() => {
