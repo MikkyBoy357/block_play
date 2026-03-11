@@ -1,7 +1,7 @@
 "use client"
 
 import { GameCard } from "./game-card"
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, Ghost, Zap, Brain, Grid3X3, Flag } from "lucide-react"
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane, Ghost, Zap, Brain, Grid3X3, Flag } from "lucide-react"
 
 const games = [
   {
@@ -123,6 +123,26 @@ const games = [
     color: "from-red-400 to-blue-500",
     players: "1.9k",
     image: "/flag-quiz-world.svg",
+  }, 
+  {
+    id: 13,
+    title: "Flappy Plane",
+    slug: "flappy-plane",
+    description: "Tap to fly through the pipes",
+    icon: Plane,
+    color: "from-sky-500 to-blue-500",
+    players: "3.6k",
+    image: "/flappy-plane-card.svg",
+  },
+  {
+    id: 14,
+    title: "Gravity Run",
+    slug: "gravity-run",
+    description: "Flip gravity, dodge pits & spikes",
+    icon: ArrowUpDown,
+    color: "from-lime-500 to-green-500",
+    players: "1.0k",
+    image: "/gravity-run-card.svg",
   },
 ]
 
@@ -137,7 +157,7 @@ export function GameGrid() {
           </div>
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
             <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>12 games available</span>
+            <span>{games.length} games available</span>
           </div>
         </div>
 
