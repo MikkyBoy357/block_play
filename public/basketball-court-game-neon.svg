@@ -1,117 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
   <defs>
-    <radialGradient id="bgGlow" cx="50%" cy="40%" r="70%">
-      <stop offset="0%" stop-color="#1a0a2e"/>
-      <stop offset="50%" stop-color="#16082a"/>
-      <stop offset="100%" stop-color="#0a0414"/>
-    </radialGradient>
-    <radialGradient id="ballGrad" cx="40%" cy="35%" r="50%">
-      <stop offset="0%" stop-color="#ff8c42"/>
-      <stop offset="60%" stop-color="#e85d04"/>
-      <stop offset="100%" stop-color="#c43e00"/>
-    </radialGradient>
-    <filter id="neonOrange" x="-50%" y="-50%" width="200%" height="200%">
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0a2e"/>
+      <stop offset="100%" style="stop-color:#0d0521"/>
+    </linearGradient>
+    <filter id="glow">
       <feGaussianBlur stdDeviation="4" result="blur"/>
-      <feFlood flood-color="#ff6b00" flood-opacity="0.8"/>
-      <feComposite in2="blur" operator="in"/>
-      <feMerge>
-        <feMergeNode/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <filter id="neonRed" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feFlood flood-color="#ff3366" flood-opacity="0.6"/>
-      <feComposite in2="blur" operator="in"/>
-      <feMerge>
-        <feMergeNode/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <filter id="softGlow">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <linearGradient id="courtLine" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#ff6b00" stop-opacity="0.2"/>
-      <stop offset="50%" stop-color="#ff6b00" stop-opacity="0.8"/>
-      <stop offset="100%" stop-color="#ff6b00" stop-opacity="0.2"/>
-    </linearGradient>
-    <linearGradient id="netGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.3"/>
-    </linearGradient>
   </defs>
-  
-  <!-- Background -->
-  <rect width="800" height="500" fill="url(#bgGlow)"/>
-  
-  <!-- Court floor reflection -->
-  <rect x="0" y="340" width="800" height="160" fill="#0f0620" opacity="0.8"/>
-  <line x1="0" y1="340" x2="800" y2="340" stroke="url(#courtLine)" stroke-width="2"/>
-  
-  <!-- Background particles -->
-  <circle cx="100" cy="80" r="2" fill="#ff6b00" opacity="0.4"/>
-  <circle cx="650" cy="120" r="1.5" fill="#ff3366" opacity="0.3"/>
-  <circle cx="300" cy="60" r="1" fill="#ff9500" opacity="0.5"/>
-  <circle cx="720" cy="200" r="2" fill="#ff6b00" opacity="0.3"/>
-  <circle cx="50" cy="250" r="1.5" fill="#ff3366" opacity="0.4"/>
-  <circle cx="500" cy="40" r="1" fill="#ffffff" opacity="0.3"/>
-  <circle cx="200" cy="300" r="1.5" fill="#ff6b00" opacity="0.2"/>
-  
-  <!-- Backboard -->
-  <rect x="440" y="80" width="120" height="90" rx="4" fill="none" stroke="#ff3366" stroke-width="2.5" filter="url(#neonRed)" opacity="0.9"/>
-  <rect x="470" y="100" width="60" height="45" rx="2" fill="none" stroke="#ff3366" stroke-width="1.5" opacity="0.6"/>
-  
-  <!-- Backboard support -->
-  <line x1="560" y1="125" x2="600" y2="125" stroke="#ff3366" stroke-width="2" opacity="0.5"/>
-  <line x1="600" y1="80" x2="600" y2="340" stroke="#444" stroke-width="3" opacity="0.4"/>
-  
-  <!-- Hoop / Rim -->
-  <ellipse cx="460" cy="175" rx="40" ry="12" fill="none" stroke="#ff6b00" stroke-width="3" filter="url(#neonOrange)"/>
-  
-  <!-- Net -->
-  <g stroke="url(#netGrad)" stroke-width="1" fill="none" opacity="0.6">
-    <path d="M425,185 Q430,210 435,240"/>
-    <path d="M435,185 Q438,215 440,240"/>
-    <path d="M445,185 Q446,215 445,240"/>
-    <path d="M455,185 Q456,215 455,240"/>
-    <path d="M465,185 Q464,215 460,240"/>
-    <path d="M475,185 Q472,215 465,240"/>
-    <path d="M485,185 Q480,210 470,240"/>
-    <path d="M495,185 Q488,210 475,240"/>
-    <!-- Cross threads -->
-    <path d="M428,200 Q460,195 492,200" opacity="0.4"/>
-    <path d="M432,215 Q458,210 488,215" opacity="0.3"/>
-    <path d="M436,230 Q455,226 480,230" opacity="0.2"/>
-  </g>
-  
-  <!-- Basketball -->
-  <g filter="url(#softGlow)">
-    <circle cx="280" cy="200" r="65" fill="url(#ballGrad)"/>
-    <!-- Ball lines -->
-    <path d="M215,200 Q280,180 345,200" fill="none" stroke="#c43e00" stroke-width="2.5" opacity="0.7"/>
-    <path d="M215,200 Q280,220 345,200" fill="none" stroke="#c43e00" stroke-width="2.5" opacity="0.7"/>
-    <line x1="280" y1="135" x2="280" y2="265" stroke="#c43e00" stroke-width="2.5" opacity="0.7"/>
-    <!-- Ball highlight -->
-    <ellipse cx="260" cy="175" rx="20" ry="15" fill="white" opacity="0.15"/>
-  </g>
-  
-  <!-- Motion trail arcs -->
-  <path d="M280,200 Q350,100 460,175" fill="none" stroke="#ff6b00" stroke-width="1.5" stroke-dasharray="8,6" opacity="0.4"/>
-  <path d="M285,205 Q355,110 460,178" fill="none" stroke="#ff9500" stroke-width="1" stroke-dasharray="4,8" opacity="0.25"/>
-  
-  <!-- Floor reflection of ball -->
-  <ellipse cx="280" cy="370" rx="40" ry="10" fill="#ff6b00" opacity="0.08"/>
-  
-  <!-- Score elements -->
-  <text x="80" y="420" font-family="'Arial Black', Arial, sans-serif" font-size="48" font-weight="900" fill="#ff6b00" opacity="0.15">SCORE</text>
-  
-  <!-- Ambient light rays -->
-  <line x1="400" y1="0" x2="350" y2="500" stroke="#ff6b00" stroke-width="0.5" opacity="0.05"/>
-  <line x1="420" y1="0" x2="380" y2="500" stroke="#ff3366" stroke-width="0.5" opacity="0.05"/>
-  <line x1="440" y1="0" x2="410" y2="500" stroke="#ff6b00" stroke-width="0.5" opacity="0.04"/>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <!-- Court lines -->
+  <rect x="100" y="100" width="600" height="400" fill="none" stroke="#ff6600" stroke-width="3" opacity="0.6" filter="url(#glow)"/>
+  <line x1="400" y1="100" x2="400" y2="500" stroke="#ff6600" stroke-width="2" opacity="0.5"/>
+  <circle cx="400" cy="300" r="80" fill="none" stroke="#ff6600" stroke-width="2" opacity="0.5"/>
+  <!-- Hoop -->
+  <rect x="340" y="130" width="120" height="8" rx="4" fill="#ff4400" filter="url(#glow)"/>
+  <circle cx="400" cy="200" r="35" fill="none" stroke="#ff8800" stroke-width="4" filter="url(#glow)"/>
+  <!-- Ball -->
+  <circle cx="400" cy="350" r="40" fill="#ff6600" opacity="0.8" filter="url(#glow)"/>
+  <path d="M 360 350 Q 400 320 440 350" fill="none" stroke="#cc4400" stroke-width="2"/>
+  <path d="M 400 310 L 400 390" fill="none" stroke="#cc4400" stroke-width="2"/>
+  <!-- Title -->
+  <text x="400" y="560" text-anchor="middle" font-family="monospace" font-size="28" font-weight="bold" fill="#ff8800" filter="url(#glow)">BASKETBALL TAP</text>
 </svg>

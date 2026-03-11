@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d0d1a"/>
+      <stop offset="100%" style="stop-color:#1a0a2e"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e74c3c;stop-opacity:0.15"/>
+      <stop offset="50%" style="stop-color:#3498db;stop-opacity:0.1"/>
+      <stop offset="100%" style="stop-color:#2ecc71;stop-opacity:0.05"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <rect x="0" y="0" width="400" height="300" fill="url(#glow)"/>
+  <!-- Globe outline -->
+  <circle cx="200" cy="148" r="80" fill="none" stroke="#3498db" stroke-width="1" opacity="0.2"/>
+  <ellipse cx="200" cy="148" rx="40" ry="80" fill="none" stroke="#3498db" stroke-width="0.5" opacity="0.15"/>
+  <ellipse cx="200" cy="148" rx="65" ry="80" fill="none" stroke="#3498db" stroke-width="0.5" opacity="0.1"/>
+  <line x1="120" y1="148" x2="280" y2="148" stroke="#3498db" stroke-width="0.5" opacity="0.15"/>
+  <line x1="130" y1="118" x2="270" y2="118" stroke="#3498db" stroke-width="0.5" opacity="0.1"/>
+  <line x1="130" y1="178" x2="270" y2="178" stroke="#3498db" stroke-width="0.5" opacity="0.1"/>
+  <!-- Flag 1 - top left (red/white stripes) -->
+  <g transform="translate(95,70) rotate(-12)">
+    <rect x="0" y="0" width="44" height="30" rx="3" fill="#e74c3c" opacity="0.85"/>
+    <rect x="0" y="6" width="44" height="4" fill="#fff" opacity="0.7"/>
+    <rect x="0" y="14" width="44" height="4" fill="#fff" opacity="0.7"/>
+    <rect x="0" y="22" width="44" height="4" fill="#fff" opacity="0.7"/>
+    <rect x="0" y="0" width="16" height="14" fill="#2c3e50" opacity="0.85" rx="1"/>
+  </g>
+  <!-- Flag 2 - top right (tricolor green/white/orange) -->
+  <g transform="translate(260,65) rotate(8)">
+    <rect x="0" y="0" width="44" height="30" rx="3" fill="#fff" opacity="0.85"/>
+    <rect x="0" y="0" width="15" height="30" fill="#2ecc71" opacity="0.85" rx="3"/>
+    <rect x="29" y="0" width="15" height="30" fill="#f0a000" opacity="0.85" rx="3"/>
+  </g>
+  <!-- Flag 3 - center (blue/white/red tricolor) -->
+  <g transform="translate(170,105)">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#fff" opacity="0.9"/>
+    <rect x="0" y="0" width="20" height="40" fill="#3498db" opacity="0.9" rx="4"/>
+    <rect x="40" y="0" width="20" height="40" fill="#e74c3c" opacity="0.9" rx="4"/>
+  </g>
+  <!-- Flag 4 - bottom left (green with star) -->
+  <g transform="translate(100,175) rotate(6)">
+    <rect x="0" y="0" width="44" height="30" rx="3" fill="#2ecc71" opacity="0.85"/>
+    <text x="22" y="20" text-anchor="middle" fill="#f1c40f" font-size="14" opacity="0.9">★</text>
+  </g>
+  <!-- Flag 5 - bottom right (red circle on white) -->
+  <g transform="translate(255,170) rotate(-5)">
+    <rect x="0" y="0" width="44" height="30" rx="3" fill="#ecf0f1" opacity="0.85"/>
+    <circle cx="22" cy="15" r="8" fill="#e74c3c" opacity="0.9"/>
+  </g>
+  <!-- Question marks -->
+  <text x="200" y="215" text-anchor="middle" fill="#f1c40f" font-family="monospace" font-size="28" font-weight="bold" opacity="0.5">?</text>
+  <text x="148" y="100" text-anchor="middle" fill="#f1c40f" font-family="monospace" font-size="16" opacity="0.3">?</text>
+  <text x="300" y="140" text-anchor="middle" fill="#f1c40f" font-family="monospace" font-size="16" opacity="0.3">?</text>
+  <!-- Glow -->
+  <circle cx="200" cy="148" r="100" fill="#3498db" opacity="0.03"/>
+  <circle cx="200" cy="148" r="60" fill="#e74c3c" opacity="0.03"/>
+</svg>
