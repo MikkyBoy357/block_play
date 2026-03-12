@@ -1,7 +1,8 @@
 "use client"
 
 import { GameCard } from "./game-card"
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane, Disc } from "lucide-react"
+
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane, Disc, Ghost, Zap, Brain, Grid3X3, Flag } from "lucide-react"
 
 const games = [
   {
@@ -76,6 +77,56 @@ const games = [
   },
   {
     id: 8,
+    title: "Pac-Man",
+    slug: "pacman",
+    description: "Eat dots, dodge ghosts, clear the maze",
+    icon: Ghost,
+    color: "from-yellow-400 to-amber-500",
+    players: "5.1k",
+    image: "/pacman-arcade-neon.svg",
+  },
+  {
+    id: 9,
+    title: "Brick Break",
+    slug: "brick-break",
+    description: "Smash bricks, survive the chaos",
+    icon: Zap,
+    color: "from-green-400 to-cyan-500",
+    players: "3.7k",
+    image: "/brick-break-neon.svg",
+  },
+  {
+    id: 10,
+    title: "Math Teaser",
+    slug: "math-teaser",
+    description: "Solve fast or fail. Beat the clock!",
+    icon: Brain,
+    color: "from-yellow-400 to-green-500",
+    players: "2.1k",
+    image: "/math-teaser.svg",
+  },
+  {
+    id: 11,
+    title: "Tetris",
+    slug: "tetris",
+    description: "Stack blocks, clear lines, chase the high score",
+    icon: Grid3X3,
+    color: "from-cyan-400 to-blue-500",
+    players: "4.5k",
+    image: "/tetris-neon.svg",
+  },
+  {
+    id: 12,
+    title: "Flag Quiz",
+    slug: "flag-quiz",
+    description: "Name the country from its flag!",
+    icon: Flag,
+    color: "from-red-400 to-blue-500",
+    players: "1.9k",
+    image: "/flag-quiz-world.svg",
+  }, 
+  {
+    id: 13,
     title: "Flappy Plane",
     slug: "flappy-plane",
     description: "Tap to fly through the pipes",
@@ -85,7 +136,7 @@ const games = [
     image: "/flappy-plane-card.svg",
   },
   {
-    id: 9,
+    id: 14,
     title: "Gravity Run",
     slug: "gravity-run",
     description: "Flip gravity, dodge pits & spikes",
