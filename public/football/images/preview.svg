@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" width="480" height="280">
+  <defs>
+    <radialGradient id="ballGrad" cx="40%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#e8e8e8"/>
+      <stop offset="80%" stop-color="#aaaaaa"/>
+      <stop offset="100%" stop-color="#666666"/>
+    </radialGradient>
+    <radialGradient id="ballGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#00f0ff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#00f0ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#39ff14" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#39ff14" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="neonGreen" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feFlood flood-color="#39ff14" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neonCyan" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="#00f0ff" flood-opacity="0.7" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neonCyanBall" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feFlood flood-color="#00f0ff" flood-opacity="0.8" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neonPink" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#ff2d7b" flood-opacity="0.5" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="480" height="280" fill="#0a0e1a"/>
+
+  <!-- Background grid -->
+  <g opacity="0.04" stroke="#00f0ff" stroke-width="0.5">
+    <line x1="0" y1="0" x2="0" y2="280"/><line x1="40" y1="0" x2="40" y2="280"/>
+    <line x1="80" y1="0" x2="80" y2="280"/><line x1="120" y1="0" x2="120" y2="280"/>
+    <line x1="160" y1="0" x2="160" y2="280"/><line x1="200" y1="0" x2="200" y2="280"/>
+    <line x1="240" y1="0" x2="240" y2="280"/><line x1="280" y1="0" x2="280" y2="280"/>
+    <line x1="320" y1="0" x2="320" y2="280"/><line x1="360" y1="0" x2="360" y2="280"/>
+    <line x1="400" y1="0" x2="400" y2="280"/><line x1="440" y1="0" x2="440" y2="280"/>
+    <line x1="480" y1="0" x2="480" y2="280"/>
+    <line x1="0" y1="0" x2="480" y2="0"/><line x1="0" y1="40" x2="480" y2="40"/>
+    <line x1="0" y1="80" x2="480" y2="80"/><line x1="0" y1="120" x2="480" y2="120"/>
+    <line x1="0" y1="160" x2="480" y2="160"/><line x1="0" y1="200" x2="480" y2="200"/>
+    <line x1="0" y1="240" x2="480" y2="240"/><line x1="0" y1="280" x2="480" y2="280"/>
+  </g>
+
+  <!-- Center glow -->
+  <circle cx="240" cy="140" r="120" fill="url(#centerGlow)"/>
+
+  <!-- Soccer pitch markings -->
+  <g filter="url(#neonGreen)" opacity="0.12" stroke="#39ff14" stroke-width="1.5" fill="none">
+    <!-- Pitch outline -->
+    <rect x="12" y="12" width="456" height="256" rx="0"/>
+    <!-- Center line -->
+    <line x1="0" y1="140" x2="480" y2="140"/>
+    <!-- Center circle -->
+    <circle cx="240" cy="140" r="42"/>
+    <!-- Top penalty box -->
+    <rect x="108" y="12" width="264" height="34"/>
+    <!-- Top goal box -->
+    <rect x="168" y="12" width="144" height="14"/>
+    <!-- Bottom penalty box -->
+    <rect x="108" y="234" width="264" height="34"/>
+    <!-- Bottom goal box -->
+    <rect x="168" y="254" width="144" height="14"/>
+    <!-- Corner arcs -->
+    <path d="M12,24 A12,12 0 0,1 24,12"/>
+    <path d="M456,12 A12,12 0 0,1 468,24"/>
+    <path d="M468,256 A12,12 0 0,1 456,268"/>
+    <path d="M24,268 A12,12 0 0,1 12,256"/>
+    <!-- Top penalty arc -->
+    <path d="M210,46 A21,21 0 0,0 270,46"/>
+    <!-- Bottom penalty arc -->
+    <path d="M210,234 A21,21 0 0,1 270,234"/>
+  </g>
+
+  <!-- Center dot -->
+  <circle cx="240" cy="140" r="3" fill="#39ff14" opacity="0.15"/>
+
+  <!-- Ground line -->
+  <line x1="0" y1="278" x2="480" y2="278" stroke="#39ff14" stroke-width="2" opacity="0.4" filter="url(#neonGreen)"/>
+
+  <!-- Scattered glow particles -->
+  <g filter="url(#softGlow)">
+    <circle cx="100" cy="200" r="3" fill="#00f0ff" opacity="0.3"/>
+    <circle cx="350" cy="80" r="2.5" fill="#39ff14" opacity="0.25"/>
+    <circle cx="400" cy="210" r="2" fill="#ff2d7b" opacity="0.2"/>
+    <circle cx="60" cy="60" r="2" fill="#ffe600" opacity="0.2"/>
+    <circle cx="300" cy="240" r="1.5" fill="#aa44ff" opacity="0.25"/>
+    <circle cx="180" cy="50" r="2" fill="#00f0ff" opacity="0.2"/>
+    <circle cx="420" cy="140" r="1.5" fill="#39ff14" opacity="0.2"/>
+  </g>
+
+  <!-- Ball outer glow -->
+  <circle cx="240" cy="145" r="50" fill="url(#ballGlow)" filter="url(#neonCyanBall)"/>
+
+  <!-- Ball body -->
+  <circle cx="240" cy="145" r="28" fill="url(#ballGrad)" filter="url(#neonCyan)"/>
+
+  <!-- Ball pentagon pattern -->
+  <g transform="translate(240,145)">
+    <!-- Center pentagon -->
+    <polygon points="0,-10.6 10.1,-3.3 6.2,8.6 -6.2,8.6 -10.1,-3.3" fill="#333" stroke="#333" stroke-width="1.5"/>
+    <!-- Lines from pentagon to edge -->
+    <line x1="0" y1="-10.6" x2="0" y2="-21" stroke="#333" stroke-width="1.5"/>
+    <line x1="10.1" y1="-3.3" x2="20" y2="-6.5" stroke="#333" stroke-width="1.5"/>
+    <line x1="6.2" y1="8.6" x2="12.3" y2="17" stroke="#333" stroke-width="1.5"/>
+    <line x1="-6.2" y1="8.6" x2="-12.3" y2="17" stroke="#333" stroke-width="1.5"/>
+    <line x1="-10.1" y1="-3.3" x2="-20" y2="-6.5" stroke="#333" stroke-width="1.5"/>
+  </g>
+
+  <!-- Ball neon rim -->
+  <circle cx="240" cy="145" r="28" fill="none" stroke="#00f0ff" stroke-width="1.5" opacity="0.6" filter="url(#neonCyan)"/>
+
+  <!-- Small floating particles near ball -->
+  <circle cx="215" cy="125" r="2" fill="#00f0ff" opacity="0.5" filter="url(#neonCyan)"/>
+  <circle cx="270" cy="130" r="1.5" fill="#39ff14" opacity="0.4" filter="url(#neonGreen)"/>
+  <circle cx="225" cy="170" r="1.5" fill="#ff2d7b" opacity="0.35" filter="url(#neonPink)"/>
+  <circle cx="260" cy="165" r="2" fill="#ffe600" opacity="0.3"/>
+
+  <!-- Score indicator text -->
+  <text x="240" y="38" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#00f0ff" opacity="0.3" filter="url(#neonCyan)">12</text>
+
+  <!-- Edge glow effects -->
+  <rect x="0" y="0" width="3" height="280" fill="#ff1a1a" opacity="0.08"/>
+  <rect x="477" y="0" width="3" height="280" fill="#ffe600" opacity="0.08"/>
+  <rect x="0" y="0" width="480" height="3" fill="#1a8cff" opacity="0.06"/>
+</svg>
