@@ -13,7 +13,7 @@ const games = [
     icon: Joystick,
     color: "from-emerald-500 to-cyan-500",
     players: "2.4k",
-    image: "/football-soccer-game-neon-style.jpg",
+    image: "/football/images/preview.svg",
   },
   {
     id: 2,
