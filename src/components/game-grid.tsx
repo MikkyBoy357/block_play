@@ -2,7 +2,7 @@
 
 import { GameCard } from "./game-card"
 
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane, Disc, Ghost, Zap, Brain, Grid3X3, Flag } from "lucide-react"
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane, Disc, Ghost, Zap, Brain, Grid3X3, Flag, Worm, Footprints } from "lucide-react"
 
 const games = [
   {
@@ -154,6 +154,26 @@ const games = [
     color: "from-cyan-500 to-teal-500",
     players: "0.8k",
     image: "/air-hockey-glow-neon.svg",
+  },
+  {
+    id: 16,
+    title: "Glow Snake",
+    slug: "glow-snake",
+    description: "Neon snake with glow & particle FX",
+    icon: Worm,
+    color: "from-cyan-400 to-purple-500",
+    players: "1.2k",
+    image: "/glow-snake-neon.svg",
+  },
+  {
+    id: 17,
+    title: "Crossy Road",
+    slug: "crossy-road",
+    description: "Hop through neon traffic & rivers",
+    icon: Footprints,
+    color: "from-cyan-400 to-green-500",
+    players: "2.0k",
+    image: "/crossy-road-neon.svg",
   },
 ]
 
