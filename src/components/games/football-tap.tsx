@@ -494,6 +494,66 @@ export function FootballTapGame() {
             }
             ctx.restore()
 
+            // ── Soccer pitch markings ──
+            ctx.save()
+            ctx.strokeStyle = NEON_GREEN
+            ctx.lineWidth = 1.5
+            ctx.globalAlpha = 0.08
+            ctx.shadowColor = NEON_GREEN
+            ctx.shadowBlur = 4
+
+            // Center line
+            ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke()
+
+            // Center circle
+            const centerR = Math.min(w, h) * 0.15
+            ctx.beginPath(); ctx.arc(w / 2, h / 2, centerR, 0, Math.PI * 2); ctx.stroke()
+
+            // Center dot
+            ctx.fillStyle = NEON_GREEN
+            ctx.globalAlpha = 0.12
+            ctx.beginPath(); ctx.arc(w / 2, h / 2, 3, 0, Math.PI * 2); ctx.fill()
+            ctx.globalAlpha = 0.08
+
+            // Pitch outline
+            const margin = 12
+            ctx.strokeRect(margin, margin, w - margin * 2, h - margin * 2)
+
+            // Top penalty box
+            const boxW = w * 0.55
+            const boxH = h * 0.12
+            ctx.strokeRect((w - boxW) / 2, margin, boxW, boxH)
+
+            // Top goal box (smaller)
+            const goalW = w * 0.3
+            const goalH = h * 0.05
+            ctx.strokeRect((w - goalW) / 2, margin, goalW, goalH)
+
+            // Top penalty arc
+            ctx.beginPath()
+            ctx.arc(w / 2, margin + boxH, centerR * 0.5, 0.15 * Math.PI, 0.85 * Math.PI)
+            ctx.stroke()
+
+            // Bottom penalty box
+            ctx.strokeRect((w - boxW) / 2, h - margin - boxH, boxW, boxH)
+
+            // Bottom goal box
+            ctx.strokeRect((w - goalW) / 2, h - margin - goalH, goalW, goalH)
+
+            // Bottom penalty arc
+            ctx.beginPath()
+            ctx.arc(w / 2, h - margin - boxH, centerR * 0.5, 1.15 * Math.PI, 1.85 * Math.PI)
+            ctx.stroke()
+
+            // Corner arcs
+            const cornerR = 12
+            ctx.beginPath(); ctx.arc(margin, margin, cornerR, 0, Math.PI * 0.5); ctx.stroke()
+            ctx.beginPath(); ctx.arc(w - margin, margin, cornerR, Math.PI * 0.5, Math.PI); ctx.stroke()
+            ctx.beginPath(); ctx.arc(w - margin, h - margin, cornerR, Math.PI, Math.PI * 1.5); ctx.stroke()
+            ctx.beginPath(); ctx.arc(margin, h - margin, cornerR, Math.PI * 1.5, Math.PI * 2); ctx.stroke()
+
+            ctx.restore()
+
             // Ground line
             ctx.save()
             ctx.shadowColor = NEON_GREEN
