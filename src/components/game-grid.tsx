@@ -2,7 +2,7 @@
 
 import { GameCard } from "./game-card"
 
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane, Disc, Ghost, Zap, Brain, Grid3X3, Flag, Worm, Footprints } from "lucide-react"
+import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane, Disc, Ghost, Zap, Brain, Grid3X3, Flag, Worm, Footprints, RectangleHorizontal } from "lucide-react"
 
 const games = [
   {
@@ -174,6 +174,16 @@ const games = [
     color: "from-cyan-400 to-green-500",
     players: "2.0k",
     image: "/crossy-road-neon.svg",
+  },
+  {
+    id: 18,
+    title: "Pong",
+    slug: "pong",
+    description: "Classic paddle battle with neon glow & SFX",
+    icon: RectangleHorizontal,
+    color: "from-cyan-400 to-pink-500",
+    players: "1.5k",
+    image: "/pong-neon.svg",
   },
 ]
 
