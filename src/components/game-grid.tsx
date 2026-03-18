@@ -2,7 +2,7 @@
 
 import { GameCard } from "./game-card"
 
-import { Joystick, TreePine, Crosshair, Puzzle, Rocket, Dices, Circle, ArrowUpDown, Plane, Disc, Ghost, Zap, Brain, Grid3X3, Flag, Worm, Footprints } from "lucide-react"
+import { Joystick, TreePine, Circle, ArrowUpDown, Plane, Disc, Ghost, Zap, Brain, Grid3X3, Flag, Worm, Footprints } from "lucide-react"
 
 const games = [
   {
@@ -34,46 +34,6 @@ const games = [
     color: "from-orange-500 to-red-500",
     players: "1.2k",
     image: "/basketball-court-game-neon.svg",
-  },
-  {
-    id: 4,
-    title: "Neon Shooter",
-    slug: "neon-shooter",
-    description: "Blast through cyber waves",
-    icon: Crosshair,
-    color: "from-pink-500 to-rose-500",
-    players: "3.2k",
-    image: "/neon-shooter-space-game-cyberpunk.jpg",
-  },
-  {
-    id: 5,
-    title: "Block Puzzle",
-    slug: "block-puzzle",
-    description: "Fit the pieces, clear the board",
-    icon: Puzzle,
-    color: "from-violet-500 to-purple-500",
-    players: "4.1k",
-    image: "/tetris-block-puzzle-game-colorful.jpg",
-  },
-  {
-    id: 6,
-    title: "Rocket Rush",
-    slug: "rocket-rush",
-    description: "Navigate through asteroid fields",
-    icon: Rocket,
-    color: "from-blue-500 to-indigo-500",
-    players: "1.5k",
-    image: "/rocket-space-game-asteroids-neon.jpg",
-  },
-  {
-    id: 7,
-    title: "Lucky Roll",
-    slug: "lucky-roll",
-    description: "Roll the dice, test your luck",
-    icon: Dices,
-    color: "from-teal-500 to-emerald-500",
-    players: "2.9k",
-    image: "/dice-casino-game-futuristic-neon.jpg",
   },
   {
     id: 8,

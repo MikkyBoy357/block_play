@@ -39,6 +39,33 @@ interface FireworkSpark {
     radius: number
 }
 
+type PowerUpType = "slow" | "magnet" | "shield" | "double" | "shrink"
+
+interface PowerUp {
+    x: number
+    y: number
+    vx: number
+    vy: number
+    radius: number
+    type: PowerUpType
+    color: string
+    label: string
+    bobPhase: number
+    bobSpeed: number
+    life: number
+    pulsePhase: number
+}
+
+const POWERUP_CONFIG: Record<PowerUpType, { color: string; label: string; duration: number }> = {
+    slow:   { color: "#00f0ff", label: "🐢", duration: 5 },
+    magnet: { color: "#aa44ff", label: "🧲", duration: 4 },
+    shield: { color: "#39ff14", label: "🛡️", duration: 6 },
+    double: { color: "#ffe600", label: "×2",  duration: 5 },
+    shrink: { color: "#ff2d7b", label: "🔻", duration: 4 },
+}
+
+const POWERUP_TYPES: PowerUpType[] = ["slow", "magnet", "shield", "double", "shrink"]
+
 // ─── Colors ───
 const NEON_CYAN = "#00f0ff"
 const NEON_PINK = "#ff2d7b"
@@ -57,12 +84,12 @@ const BALL_COLORS = [NEON_CYAN, NEON_GREEN, NEON_YELLOW, NEON_PINK, NEON_PURPLE,
 const FIREWORK_COLORS = ["#ff2d7b", "#00f0ff", "#39ff14", "#ffe600", "#aa44ff", "#ff8800", "#ff4466", "#44ddff"]
 
 // ─── Physics ───
-const GRAVITY = 800 // px/s²
-const KICK_VY = -620 // upward velocity on tap
-const BALL_RADIUS = 28
-const HORIZONTAL_DRIFT = 80
-const WALL_BOUNCE = 0.6
-const AIR_DRAG = 0.998
+const GRAVITY = 1050 // px/s²
+const KICK_VY = -580 // upward velocity on tap
+const BALL_RADIUS = 24
+const HORIZONTAL_DRIFT = 120
+const WALL_BOUNCE = 0.45
+const AIR_DRAG = 0.996
 
 export function FootballTapGame() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -92,6 +119,12 @@ export function FootballTapGame() {
     const fireworksRef = useRef<Firework[]>([])
     const spotlightTimeRef = useRef(0)
     const kickFlashRef = useRef(0)
+
+    // Power-ups
+    const powerUpsRef = useRef<PowerUp[]>([])
+    const powerUpTimerRef = useRef(0)
+    const activePowerUpRef = useRef<{ type: PowerUpType; remaining: number } | null>(null)
+    const [activePowerUp, setActivePowerUp] = useState<{ type: PowerUpType; remaining: number } | null>(null)
 
     useEffect(() => { gameStateRef.current = gameState }, [gameState])
 
@@ -191,6 +224,63 @@ export function FootballTapGame() {
         } catch { /* */ }
     }, [soundEnabled, getAudioCtx])
 
+    const playWallBounceSound = useCallback(() => {
+        if (!soundEnabled) return
+        try {
+            const ctx = getAudioCtx()
+            const t = ctx.currentTime
+            // Thud
+            const osc = ctx.createOscillator()
+            const gain = ctx.createGain()
+            osc.type = "sine"
+            osc.frequency.setValueAtTime(150, t)
+            osc.frequency.exponentialRampToValueAtTime(60, t + 0.1)
+            gain.gain.setValueAtTime(0.2, t)
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12)
+            osc.connect(gain).connect(ctx.destination)
+            osc.start(t)
+            osc.stop(t + 0.12)
+            // Rattle
+            const noiseLen = ctx.sampleRate * 0.06
+            const noiseBuf = ctx.createBuffer(1, noiseLen, ctx.sampleRate)
+            const noiseData = noiseBuf.getChannelData(0)
+            for (let i = 0; i < noiseLen; i++) {
+                noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseLen)
+            }
+            const noiseSrc = ctx.createBufferSource()
+            noiseSrc.buffer = noiseBuf
+            const noiseGain = ctx.createGain()
+            noiseGain.gain.setValueAtTime(0.08, t)
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08)
+            const filter = ctx.createBiquadFilter()
+            filter.type = "highpass"
+            filter.frequency.value = 400
+            noiseSrc.connect(filter).connect(noiseGain).connect(ctx.destination)
+            noiseSrc.start(t)
+        } catch { /* */ }
+    }, [soundEnabled, getAudioCtx])
+
+    const playPowerUpCollect = useCallback(() => {
+        if (!soundEnabled) return
+        try {
+            const ctx = getAudioCtx()
+            const t = ctx.currentTime
+            const notes = [880, 1100, 1320]
+            notes.forEach((freq, i) => {
+                const osc = ctx.createOscillator()
+                const gain = ctx.createGain()
+                osc.type = "sine"
+                osc.frequency.value = freq
+                gain.gain.setValueAtTime(0, t + i * 0.06)
+                gain.gain.linearRampToValueAtTime(0.15, t + i * 0.06 + 0.02)
+                gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.15)
+                osc.connect(gain).connect(ctx.destination)
+                osc.start(t + i * 0.06)
+                osc.stop(t + i * 0.06 + 0.15)
+            })
+        } catch { /* */ }
+    }, [soundEnabled, getAudioCtx])
+
     const playGameOverSound = useCallback(() => {
         if (!soundEnabled) return
         try {
@@ -261,6 +351,10 @@ export function FootballTapGame() {
 
         particlesRef.current = []
         fireworksRef.current = []
+        powerUpsRef.current = []
+        powerUpTimerRef.current = 0
+        activePowerUpRef.current = null
+        setActivePowerUp(null)
         spotlightTimeRef.current = 0
 
         scoreRef.current = 0
@@ -286,20 +380,44 @@ export function FootballTapGame() {
         const dy = my - ballYRef.current
         const dist = Math.sqrt(dx * dx + dy * dy)
 
-        if (dist < BALL_RADIUS * 2.5) {
+        // Check power-up taps first
+        const pups = powerUpsRef.current
+        for (let i = pups.length - 1; i >= 0; i--) {
+            const pu = pups[i]
+            const pdx = mx - pu.x
+            const pdy = my - pu.y
+            const pdist = Math.sqrt(pdx * pdx + pdy * pdy)
+            if (pdist < pu.radius * 2) {
+                const cfg = POWERUP_CONFIG[pu.type]
+                activePowerUpRef.current = { type: pu.type, remaining: cfg.duration }
+                setActivePowerUp({ type: pu.type, remaining: cfg.duration })
+                spawnParticles(pu.x, pu.y, cfg.color, 20, 5)
+                spawnParticles(pu.x, pu.y, "#ffffff", 10, 3)
+                playPowerUpCollect()
+                pups.splice(i, 1)
+                break
+            }
+        }
+
+        const hitRadius = activePowerUpRef.current?.type === "shrink" ? BALL_RADIUS * 1.5 : BALL_RADIUS * 2.0
+        if (dist < hitRadius) {
             // Y-axis thrust: tap bottom of ball → stronger kick, tap top → weaker
             // dy < 0 means tapped above center, dy > 0 means tapped below center
             // Map from ~0.75x to ~1.25x of base kick velocity
-            const verticalFactor = 1 + (dy / (BALL_RADIUS * 2.5)) * 0.25
+            const verticalFactor = 1 + (dy / (BALL_RADIUS * 2.0)) * 0.25
             ballVyRef.current = KICK_VY * verticalFactor
-            // Recoil opposite to tap offset: tap left of ball → ball goes right
-            const recoilX = -dx / (BALL_RADIUS * 2.5) * HORIZONTAL_DRIFT * 2
-            ballVxRef.current = recoilX + (Math.random() - 0.5) * 20
-            ballRotSpeedRef.current = recoilX * 0.1 + (Math.random() - 0.5) * 5
+            // Recoil: strong directional + random burst + curve spin
+            const recoilX = -dx / (BALL_RADIUS * 2.0) * HORIZONTAL_DRIFT * 3
+            const randomBurst = (Math.random() - 0.5) * 160
+            const scoreChaos = Math.min(scoreRef.current * 4, 120)
+            const curveSpin = (Math.random() > 0.5 ? 1 : -1) * (40 + Math.random() * scoreChaos)
+            ballVxRef.current = recoilX + randomBurst + curveSpin
+            ballRotSpeedRef.current = ballVxRef.current * 0.12 + (Math.random() - 0.5) * 12
             ballScaleRef.current = 0.7
             kickFlashRef.current = 1
 
-            scoreRef.current += 1
+            const points = activePowerUpRef.current?.type === "double" ? 2 : 1
+            scoreRef.current += points
             setScore(scoreRef.current)
             playKickSound()
 
@@ -319,7 +437,7 @@ export function FootballTapGame() {
                 }
             }
         }
-    }, [startGame, playKickSound, playMilestoneSound, spawnParticles, launchFirework, canvasSize])
+    }, [startGame, playKickSound, playMilestoneSound, playPowerUpCollect, spawnParticles, launchFirework, canvasSize])
 
     // ─── Canvas sizing ───
     useEffect(() => {
@@ -383,7 +501,21 @@ export function FootballTapGame() {
 
             // ── Update ──
             if (gameStateRef.current === "playing") {
-                ballVyRef.current += GRAVITY * dt
+                // Active power-up timer
+                const pup = activePowerUpRef.current
+                if (pup) {
+                    pup.remaining -= dt
+                    setActivePowerUp({ ...pup })
+                    if (pup.remaining <= 0) {
+                        activePowerUpRef.current = null
+                        setActivePowerUp(null)
+                    }
+                }
+
+                const activeType = activePowerUpRef.current?.type
+                const gravMult = activeType === "slow" ? 0.55 : 1
+
+                ballVyRef.current += GRAVITY * gravMult * dt
                 ballXRef.current += ballVxRef.current * dt
                 ballYRef.current += ballVyRef.current * dt
                 ballVxRef.current *= AIR_DRAG
@@ -393,19 +525,38 @@ export function FootballTapGame() {
                 ballScaleRef.current += (1 - ballScaleRef.current) * 8 * dt
                 kickFlashRef.current *= Math.pow(0.01, dt)
 
-                // Wall bounces
-                if (ballXRef.current - BALL_RADIUS < 0) {
-                    ballXRef.current = BALL_RADIUS
-                    ballVxRef.current = Math.abs(ballVxRef.current) * WALL_BOUNCE
-                    spawnParticles(BALL_RADIUS, ballYRef.current, EDGE_RED, 8, 3)
-                } else if (ballXRef.current + BALL_RADIUS > w) {
-                    ballXRef.current = w - BALL_RADIUS
-                    ballVxRef.current = -Math.abs(ballVxRef.current) * WALL_BOUNCE
-                    spawnParticles(w - BALL_RADIUS, ballYRef.current, EDGE_YELLOW, 8, 3)
+                // Magnet: pull ball toward center
+                if (activeType === "magnet") {
+                    const centerX = w / 2
+                    const pullX = (centerX - ballXRef.current) * 0.8 * dt
+                    ballVxRef.current += pullX
                 }
 
-                // Floor = game over
-                if (ballYRef.current + BALL_RADIUS > h) {
+                // Wall bounces — add vertical jolt + random horizontal burst
+                if (ballXRef.current - BALL_RADIUS < 0) {
+                    ballXRef.current = BALL_RADIUS
+                    ballVxRef.current = Math.abs(ballVxRef.current) * WALL_BOUNCE + 60 + Math.random() * 80
+                    ballVyRef.current += (Math.random() - 0.4) * 200
+                    ballRotSpeedRef.current = (Math.random() - 0.5) * 15
+                    spawnParticles(BALL_RADIUS, ballYRef.current, EDGE_RED, 14, 5)
+                    playWallBounceSound()
+                } else if (ballXRef.current + BALL_RADIUS > w) {
+                    ballXRef.current = w - BALL_RADIUS
+                    ballVxRef.current = -(Math.abs(ballVxRef.current) * WALL_BOUNCE + 60 + Math.random() * 80)
+                    ballVyRef.current += (Math.random() - 0.4) * 200
+                    ballRotSpeedRef.current = (Math.random() - 0.5) * 15
+                    spawnParticles(w - BALL_RADIUS, ballYRef.current, EDGE_YELLOW, 14, 5)
+                    playWallBounceSound()
+                }
+
+                // Floor = game over (shield saves once)
+                if (ballYRef.current + BALL_RADIUS > h && activeType === "shield") {
+                    ballYRef.current = h - BALL_RADIUS
+                    ballVyRef.current = KICK_VY * 0.8
+                    activePowerUpRef.current = null
+                    setActivePowerUp(null)
+                    spawnParticles(ballXRef.current, h - BALL_RADIUS, NEON_GREEN, 30, 5)
+                } else if (ballYRef.current + BALL_RADIUS > h) {
                     ballYRef.current = h - BALL_RADIUS
                     ballVyRef.current = 0
                     ballVxRef.current = 0
@@ -417,6 +568,51 @@ export function FootballTapGame() {
                         localStorage.setItem("footballTap_highScore", String(scoreRef.current))
                     }
                     setGameState("gameover")
+                }
+
+                // Spawn power-ups
+                powerUpTimerRef.current -= dt
+                if (powerUpTimerRef.current <= 0 && powerUpsRef.current.length < 2) {
+                    const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)]
+                    const cfg = POWERUP_CONFIG[type]
+                    powerUpsRef.current.push({
+                        x: Math.random() * (w - 60) + 30,
+                        y: Math.random() * (h * 0.5) + 40,
+                        vx: (Math.random() - 0.5) * 50,
+                        vy: (Math.random() - 0.5) * 30,
+                        radius: 18,
+                        type,
+                        color: cfg.color,
+                        label: cfg.label,
+                        bobPhase: Math.random() * Math.PI * 2,
+                        bobSpeed: 2 + Math.random() * 1.5,
+                        life: 8 + Math.random() * 4,
+                        pulsePhase: Math.random() * Math.PI * 2,
+                    })
+                    powerUpTimerRef.current = 6 + Math.random() * 6
+                }
+
+                // Update power-ups
+                for (let i = powerUpsRef.current.length - 1; i >= 0; i--) {
+                    const pu = powerUpsRef.current[i]
+                    pu.bobPhase += pu.bobSpeed * dt
+                    pu.pulsePhase += 4 * dt
+                    pu.x += pu.vx * dt
+                    pu.y += pu.vy * dt + Math.sin(pu.bobPhase) * 0.8
+                    pu.life -= dt
+                    // Bounce off walls
+                    if (pu.x - pu.radius < 0) { pu.x = pu.radius; pu.vx = Math.abs(pu.vx) }
+                    if (pu.x + pu.radius > w) { pu.x = w - pu.radius; pu.vx = -Math.abs(pu.vx) }
+                    if (pu.y - pu.radius < 0) { pu.y = pu.radius; pu.vy = Math.abs(pu.vy) }
+                    if (pu.y + pu.radius > h * 0.7) { pu.vy = -Math.abs(pu.vy) }
+                    // Random direction changes
+                    if (Math.random() < dt * 0.5) {
+                        pu.vx += (Math.random() - 0.5) * 40
+                        pu.vy += (Math.random() - 0.5) * 30
+                    }
+                    pu.vx = Math.max(-70, Math.min(70, pu.vx))
+                    pu.vy = Math.max(-50, Math.min(50, pu.vy))
+                    if (pu.life <= 0) powerUpsRef.current.splice(i, 1)
                 }
 
                 spotlightTimeRef.current += dt
@@ -673,6 +869,43 @@ export function FootballTapGame() {
                 ctx.restore()
             }
 
+            // ── Power-ups ──
+            for (const pu of powerUpsRef.current) {
+                const pulse = 1 + Math.sin(pu.pulsePhase) * 0.15
+                const fadeAlpha = pu.life < 2 ? pu.life / 2 : 1
+                ctx.save()
+                ctx.globalAlpha = fadeAlpha * 0.7
+                // Outer bubble glow
+                ctx.shadowColor = pu.color
+                ctx.shadowBlur = 20
+                ctx.strokeStyle = pu.color
+                ctx.lineWidth = 2
+                ctx.beginPath()
+                ctx.arc(pu.x, pu.y, pu.radius * pulse, 0, Math.PI * 2)
+                ctx.stroke()
+                // Inner bubble fill
+                const bubGrad = ctx.createRadialGradient(pu.x - 4, pu.y - 4, 0, pu.x, pu.y, pu.radius * pulse)
+                bubGrad.addColorStop(0, pu.color + "30")
+                bubGrad.addColorStop(0.6, pu.color + "15")
+                bubGrad.addColorStop(1, pu.color + "05")
+                ctx.fillStyle = bubGrad
+                ctx.fill()
+                // Shine highlight
+                ctx.beginPath()
+                ctx.arc(pu.x - pu.radius * 0.3, pu.y - pu.radius * 0.3, pu.radius * 0.25, 0, Math.PI * 2)
+                ctx.fillStyle = "rgba(255,255,255,0.35)"
+                ctx.fill()
+                // Label
+                ctx.globalAlpha = fadeAlpha
+                ctx.font = `bold ${Math.floor(pu.radius * 0.9)}px sans-serif`
+                ctx.textAlign = "center"
+                ctx.textBaseline = "middle"
+                ctx.fillStyle = "#ffffff"
+                ctx.shadowBlur = 0
+                ctx.fillText(pu.label, pu.x, pu.y + 1)
+                ctx.restore()
+            }
+
             // ── Ball ──
             if (gameStateRef.current === "playing" || gameStateRef.current === "gameover") {
                 const bx = ballXRef.current
@@ -833,7 +1066,7 @@ export function FootballTapGame() {
 
         animRef.current = requestAnimationFrame(loop)
         return () => cancelAnimationFrame(animRef.current)
-    }, [canvasSize, spawnParticles, launchFirework, playGameOverSound, highScore])
+    }, [canvasSize, spawnParticles, launchFirework, playGameOverSound, playWallBounceSound, highScore])
 
     return (
         <div className="fixed inset-0 bg-[#050810] flex flex-col items-center justify-center overflow-hidden select-none">
@@ -868,6 +1101,19 @@ export function FootballTapGame() {
                         <div className="text-[10px] uppercase tracking-wider text-yellow-400/70 font-mono">BEST</div>
                         <div className="text-2xl font-bold font-mono" style={{ color: NEON_YELLOW }}>{highScore}</div>
                     </div>
+                    {activePowerUp && (
+                        <>
+                            <div className="text-white/20 text-xl font-mono">|</div>
+                            <div className="text-center">
+                                <div className="text-[10px] uppercase tracking-wider font-mono" style={{ color: POWERUP_CONFIG[activePowerUp.type].color + "bb" }}>
+                                    {activePowerUp.type.toUpperCase()}
+                                </div>
+                                <div className="text-lg font-bold font-mono" style={{ color: POWERUP_CONFIG[activePowerUp.type].color }}>
+                                    {POWERUP_CONFIG[activePowerUp.type].label} {activePowerUp.remaining.toFixed(1)}s
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 
