@@ -36,7 +36,7 @@ interface Obstacle {
 const TILE = 40
 const PLAYER_SIZE = 30
 const LANE_COUNT_BUFFER = 25 // how many lanes ahead to generate
-const SAFE_ZONE_INTERVAL = 5 // every N lanes is a safe strip
+const SAFE_ZONE_INTERVAL = 7 // every N lanes is a safe strip
 
 const NEON_CYAN = "#00f0ff"
 const NEON_PINK = "#ff2d7b"
@@ -69,8 +69,8 @@ const SPEED_MIN = 1
 const SPEED_MAX = 10
 const SPEED_DEFAULT = 5
 
-const TIMER_START = 20 // seconds
-const TIMER_BONUS = 2.5 // seconds gained per new row
+const TIMER_START = 14 // seconds
+const TIMER_BONUS = 1.5 // seconds gained per new row
 const TIMER_WARNING = 5 // start warning tick below this
 
 const getSpeedColor = (speed: number): string => {

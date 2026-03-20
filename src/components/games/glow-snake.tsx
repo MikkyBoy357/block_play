@@ -26,11 +26,11 @@ interface FoodPulse {
 }
 
 const CELL_SIZE = 20
-const WINNING_SCORE = 50
+const WINNING_SCORE = 75
 
-const SPEED_MIN = 3
-const SPEED_MAX = 25
-const SPEED_DEFAULT = 13
+const SPEED_MIN = 5
+const SPEED_MAX = 30
+const SPEED_DEFAULT = 16
 
 const getSpeedColor = (speed: number): string => {
     const t = (speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)

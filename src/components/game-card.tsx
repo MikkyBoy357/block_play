@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Play, Users, Star } from "lucide-react"
+import { Play, Users, Star, Trophy, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSound } from "@/hooks/use-sound"
 import type { LucideIcon } from "lucide-react"
@@ -17,11 +17,20 @@ interface Game {
   color: string
   players: string
   image: string
+  difficulty: "Easy" | "Medium" | "Hard" | "Extreme"
+  prizePool?: string
 }
 
 interface GameCardProps {
   game: Game
   index: number
+}
+
+const difficultyColors: Record<string, string> = {
+  Easy: "text-green-400 bg-green-400/10 border-green-400/30",
+  Medium: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30",
+  Hard: "text-orange-400 bg-orange-400/10 border-orange-400/30",
+  Extreme: "text-red-400 bg-red-400/10 border-red-400/30",
 }
 
 export function GameCard({ game, index }: GameCardProps) {
@@ -32,9 +41,9 @@ export function GameCard({ game, index }: GameCardProps) {
 
   return (
     <div
-      className="group relative rounded-2xl overflow-hidden bg-card border border-border/50 transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_40px_rgba(0,255,136,0.15)]"
+      className="group relative rounded-2xl overflow-hidden bg-card border border-border/50 transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_40px_rgba(0,255,136,0.12)] hover:-translate-y-1"
       style={{
-        animationDelay: `${index * 100}ms`,
+        animationDelay: `${index * 80}ms`,
         animation: "fadeInUp 0.5s ease-out forwards",
         opacity: 0,
       }}
@@ -45,65 +54,78 @@ export function GameCard({ game, index }: GameCardProps) {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Image Container */}
-      <div className="relative h-44 overflow-hidden">
+      <div className="relative h-40 sm:h-44 overflow-hidden">
         <Image
           src={game.image || "/placeholder.svg"}
           alt={game.title}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
         />
-        <div className={`absolute inset-0 bg-gradient-to-t ${game.color} opacity-40 mix-blend-overlay`} />
-        <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+        <div className={`absolute inset-0 bg-gradient-to-t ${game.color} opacity-30 mix-blend-overlay`} />
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
 
         {/* Floating Icon */}
         <div
-          className={`absolute top-4 right-4 p-3 rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 transition-all duration-300 ${isHovered ? "scale-110 rotate-12" : ""}`}
+          className={`absolute top-3 right-3 p-2.5 rounded-xl glass transition-all duration-300 ${isHovered ? "scale-110 rotate-6" : ""}`}
         >
           <Icon className="w-5 h-5 text-primary" />
         </div>
 
         {/* Player Count */}
-        <div className="absolute top-4 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/80 backdrop-blur-sm text-xs">
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full glass text-xs">
           <Users className="w-3 h-3 text-primary" />
           <span className="text-foreground font-medium">{game.players}</span>
         </div>
+
+        {/* Prize pool badge */}
+        {game.prizePool && (
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/20 border border-green-500/30 text-xs">
+            <Trophy className="w-3 h-3 text-green-400" />
+            <span className="text-green-400 font-bold">{game.prizePool}</span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="font-bold text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start justify-between mb-2">
+          <div className="min-w-0">
+            <h3 className="font-bold text-base sm:text-lg text-foreground mb-0.5 group-hover:text-primary transition-colors truncate">
               {game.title}
             </h3>
-            <p className="text-sm text-muted-foreground">{game.description}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{game.description}</p>
           </div>
         </div>
 
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-4">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} className={`w-3.5 h-3.5 ${i < 4 ? "text-primary fill-primary" : "text-muted-foreground"}`} />
-          ))}
-          <span className="text-xs text-muted-foreground ml-1">4.0</span>
+        {/* Difficulty + Rating row */}
+        <div className="flex items-center justify-between mb-4 mt-3">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${difficultyColors[game.difficulty]}`}>
+            {game.difficulty}
+          </span>
+          <div className="flex items-center gap-1">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className={`w-3 h-3 ${i < 4 ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/30"}`} />
+            ))}
+            <span className="text-xs text-muted-foreground ml-1">4.0</span>
+          </div>
         </div>
 
         {/* Play Button */}
         <Link href={`/games/${game.slug}`} onClick={playClick}>
           <Button
-            className="w-full bg-primary/10 border border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground gap-2 transition-all duration-300 group/btn"
+            className="w-full bg-primary/10 border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground gap-2 transition-all duration-300 group/btn rounded-xl"
           >
-            <Play className="w-4 h-4 transition-transform group-hover/btn:scale-125" />
+            <Play className="w-4 h-4 transition-transform group-hover/btn:scale-110" />
             Play Now
           </Button>
         </Link>
       </div>
 
-      {/* Glow Effect */}
+      {/* Hover glow */}
       <div
         className={`absolute inset-0 pointer-events-none transition-opacity duration-500 ${isHovered ? "opacity-100" : "opacity-0"}`}
         style={{
-          background: `radial-gradient(circle at 50% 50%, rgba(0, 255, 136, 0.1), transparent 70%)`,
+          background: `radial-gradient(circle at 50% 30%, rgba(0, 255, 136, 0.06), transparent 70%)`,
         }}
       />
     </div>

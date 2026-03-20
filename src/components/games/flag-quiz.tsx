@@ -13,9 +13,9 @@ interface FlagQuestion {
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const BASE_TIME = 10000
-const MIN_TIME = 3000
-const TIME_DECAY = 200
+const BASE_TIME = 7000
+const MIN_TIME = 2000
+const TIME_DECAY = 280
 const STREAK_BONUS = 50
 const BASE_POINTS = 100
 const PERFECT_BONUS = 200

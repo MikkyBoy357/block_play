@@ -28,7 +28,7 @@ interface Fruit {
 // ─── Original Pac-Man Level Specifications ───────────────────────────────────
 // Speeds are in pixels per frame (at 60fps). Original base ~75.75 px/s.
 // We use CELL=20, so base unit = ~1.27 px/frame at 100%.
-const BASE_SPEED = 1.27
+const BASE_SPEED = 1.40
 
 interface LevelSpec {
   pacSpeed: number
@@ -48,8 +48,8 @@ interface LevelSpec {
 
 // Single brutal difficulty — ghosts are fast, ALWAYS chase, no scatter
 const BRUTAL_SPEC: LevelSpec = {
-  pacSpeed: 0.90, pacDotSpeed: 0.80, ghostSpeed: 1.05, ghostTunnelSpeed: 0.70, ghostFrightSpeed: 0.70,
-  frightTime: 1, frightFlashes: 2, elroy1Dots: 60, elroy1Speed: 1.12, elroy2Dots: 30, elroy2Speed: 1.20,
+  pacSpeed: 0.85, pacDotSpeed: 0.75, ghostSpeed: 1.15, ghostTunnelSpeed: 0.80, ghostFrightSpeed: 0.75,
+  frightTime: 0.6, frightFlashes: 1, elroy1Dots: 70, elroy1Speed: 1.22, elroy2Dots: 40, elroy2Speed: 1.30,
   fruit: { symbol: "🍒", score: 100 },
   scatterChase: [0, Infinity],  // 0s scatter → infinite chase = pure hunt mode
 }
@@ -57,12 +57,12 @@ const BRUTAL_SPEC: LevelSpec = {
 // Ghosts get slightly faster each maze cleared (keeps competitive scaling)
 const LEVEL_SPECS: LevelSpec[] = Array.from({ length: 20 }, (_, i) => ({
   ...BRUTAL_SPEC,
-  ghostSpeed: Math.min(BRUTAL_SPEC.ghostSpeed + i * 0.02, 1.40),
-  ghostTunnelSpeed: Math.min(BRUTAL_SPEC.ghostTunnelSpeed + i * 0.015, 0.95),
-  elroy1Speed: Math.min(BRUTAL_SPEC.elroy1Speed + i * 0.02, 1.45),
-  elroy2Speed: Math.min(BRUTAL_SPEC.elroy2Speed + i * 0.02, 1.50),
-  frightTime: Math.max(1 - Math.floor(i / 3), 0),  // no fright after maze 3
-  frightFlashes: i < 3 ? 2 : 0,
+  ghostSpeed: Math.min(BRUTAL_SPEC.ghostSpeed + i * 0.025, 1.55),
+  ghostTunnelSpeed: Math.min(BRUTAL_SPEC.ghostTunnelSpeed + i * 0.02, 1.05),
+  elroy1Speed: Math.min(BRUTAL_SPEC.elroy1Speed + i * 0.025, 1.55),
+  elroy2Speed: Math.min(BRUTAL_SPEC.elroy2Speed + i * 0.025, 1.60),
+  frightTime: Math.max(0.6 - Math.floor(i / 2) * 0.3, 0),  // no fright after maze 2
+  frightFlashes: i < 2 ? 1 : 0,
   fruit: [
     { symbol: "🍒", score: 100 }, { symbol: "🍓", score: 300 },
     { symbol: "🍑", score: 500 }, { symbol: "🍎", score: 700 },

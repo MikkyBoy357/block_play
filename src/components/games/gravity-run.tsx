@@ -12,12 +12,12 @@ const GRASS_THICKNESS = 10
 const PLAYER_SIZE = 32
 const PLAYER_X = 80 // fixed screen horizontal position
 
-const SCROLL_SPEED_INITIAL = 3
-const SCROLL_SPEED_MAX = 7
-const SCROLL_SPEED_INCREMENT = 0.0003
+const SCROLL_SPEED_INITIAL = 3.8
+const SCROLL_SPEED_MAX = 9.5
+const SCROLL_SPEED_INCREMENT = 0.0005
 
-const GRAVITY_STRENGTH = 0.55
-const JUMP_VELOCITY = -10 // velocity applied when flipping gravity
+const GRAVITY_STRENGTH = 0.65
+const JUMP_VELOCITY = -9.5 // velocity applied when flipping gravity
 
 const SEGMENT_WIDTH = 80
 

@@ -53,9 +53,9 @@ const GOAL_WIDTH_RATIO = 0.36
 const SCORE_PAUSE_MS = 1200
 
 const DIFFICULTY_CONFIG = {
-    easy: { speed: 5.0, reaction: 0.10, error: 18, aggression: 0.45, predict: 5, strikeRange: 3.5, label: "Easy", color: "#00ff88" },
-    medium: { speed: 7.5, reaction: 0.18, error: 7, aggression: 0.7, predict: 9, strikeRange: 4.5, label: "Medium", color: "#ffaa00" },
-    hard: { speed: 11.0, reaction: 0.28, error: 1.5, aggression: 0.95, predict: 14, strikeRange: 6, label: "Hard", color: "#ff3366" },
+    easy: { speed: 6.5, reaction: 0.14, error: 12, aggression: 0.55, predict: 7, strikeRange: 4.0, label: "Easy", color: "#00ff88" },
+    medium: { speed: 9.0, reaction: 0.22, error: 4, aggression: 0.80, predict: 11, strikeRange: 5.5, label: "Medium", color: "#ffaa00" },
+    hard: { speed: 13.0, reaction: 0.32, error: 0.8, aggression: 0.98, predict: 18, strikeRange: 7.5, label: "Hard", color: "#ff3366" },
 }
 
 const NEON_CYAN = "#00f0ff"

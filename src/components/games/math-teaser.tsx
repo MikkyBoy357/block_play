@@ -16,9 +16,9 @@ interface Question {
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const BASE_TIME = 8000     // 8 seconds for first question
-const MIN_TIME = 2500      // floor — never less than 2.5s
-const TIME_DECAY = 150     // lose 150ms per question answered
+const BASE_TIME = 6000     // 6 seconds for first question
+const MIN_TIME = 1800      // floor — never less than 1.8s
+const TIME_DECAY = 200     // lose 200ms per question answered
 const STREAK_BONUS = 50    // extra points per streak level
 const BASE_POINTS = 100
 const PERFECT_BONUS = 200  // bonus for answering in < 1.5s
