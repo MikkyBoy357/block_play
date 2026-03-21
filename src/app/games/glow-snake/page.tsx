@@ -1,4 +1,4 @@
-import { GlowSnakeGame } from "@/components/games/glow-snake"
+import { GlowSnakePageClient } from "./client"
 
 export const metadata = {
   title: "Glow Snake - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function GlowSnakePage() {
-  return <GlowSnakeGame />
+  return <GlowSnakePageClient />
 }

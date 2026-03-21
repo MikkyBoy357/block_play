@@ -1,4 +1,4 @@
-import { GravityRunGame } from "@/components/games/gravity-run"
+import { GravityRunPageClient } from "./client"
 
 export const metadata = {
   title: "Gravity Run - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function GravityRunPage() {
-  return <GravityRunGame />
+  return <GravityRunPageClient />
 }

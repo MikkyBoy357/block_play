@@ -2,6 +2,16 @@
 
 import { useState, useCallback } from "react"
 import type { GameSession } from "@/lib/game-session"
+import { getGameBySlug, type SubscriptionTier } from "@/lib/game-data"
+import { canEarn, recordGameEarning, getEarningsSummary } from "@/lib/earnings"
+
+interface EarningResult {
+  qualified: boolean
+  earned: number
+  totalWeekly: number
+  capped: boolean
+  multiplier: number
+}
 
 interface UseGameSessionReturn {
   session: GameSession | null
@@ -9,7 +19,8 @@ interface UseGameSessionReturn {
   error: string | null
   startGame: (gameId: string) => Promise<void>
   recordAction: (action: string) => Promise<boolean>
-  endGame: () => Promise<{ verified: boolean; finalScore: number } | null>
+  endGame: () => Promise<{ verified: boolean; finalScore: number; earning: EarningResult } | null>
+  getEarnings: (subscriptionTier: SubscriptionTier) => ReturnType<typeof getEarningsSummary>
 }
 
 export function useGameSession(): UseGameSessionReturn {
@@ -73,14 +84,52 @@ export function useGameSession(): UseGameSessionReturn {
       if (!response.ok) return null
 
       const data = await response.json()
+      const finalScore = data.finalScore as number
+
+      // Check if player qualified and can earn
+      const game = getGameBySlug(session.gameId)
+      const earning: EarningResult = {
+        qualified: false,
+        earned: 0,
+        totalWeekly: 0,
+        capped: false,
+        multiplier: 0,
+      }
+
+      if (game && finalScore >= game.qualifyingScore) {
+        earning.qualified = true
+        earning.multiplier = Math.floor(finalScore / game.qualifyingScore)
+
+        // Default to weekly tier; in production this would come from auth/user profile
+        const tier: SubscriptionTier = "weekly"
+        const { canEarn: canStillEarn } = canEarn(tier)
+
+        if (canStillEarn) {
+          const result = recordGameEarning(finalScore, game.qualifyingScore, game.earnAmount, tier)
+          earning.earned = result.earned
+          earning.totalWeekly = result.totalWeekly
+          earning.capped = result.capped
+          earning.multiplier = result.multiplier
+        } else {
+          earning.capped = true
+          const summary = getEarningsSummary(tier)
+          earning.totalWeekly = summary.totalEarned
+        }
+      }
+
       return {
         verified: data.verified,
-        finalScore: data.finalScore,
+        finalScore,
+        earning,
       }
     } catch {
       return null
     }
   }, [session])
+
+  const getEarnings = useCallback((subscriptionTier: SubscriptionTier) => {
+    return getEarningsSummary(subscriptionTier)
+  }, [])
 
   return {
     session,
@@ -89,5 +138,6 @@ export function useGameSession(): UseGameSessionReturn {
     startGame,
     recordAction,
     endGame,
+    getEarnings,
   }
 }

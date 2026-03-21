@@ -1,4 +1,4 @@
-import { TetrisGame } from "@/components/games/tetris"
+import { TetrisPageClient } from "./client"
 
 export const metadata = {
   title: "Tetris - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function TetrisPage() {
-  return <TetrisGame />
+  return <TetrisPageClient />
 }

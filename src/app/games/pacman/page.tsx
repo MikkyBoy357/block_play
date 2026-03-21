@@ -1,4 +1,4 @@
-import { PacmanGame } from "@/components/games/pacman"
+import { PacmanPageClient } from "./client"
 
 export const metadata = {
   title: "Pac-Man - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function PacmanPage() {
-  return <PacmanGame />
+  return <PacmanPageClient />
 }

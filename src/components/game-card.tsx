@@ -3,33 +3,17 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Play, Users, Star, Trophy, Lock } from "lucide-react"
+import { Play, Users, Star, Trophy, Target } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSound } from "@/hooks/use-sound"
-import type { LucideIcon } from "lucide-react"
-
-interface Game {
-  id: number
-  title: string
-  slug: string
-  description: string
-  icon: LucideIcon
-  color: string
-  players: string
-  image: string
-  difficulty: "Easy" | "Medium" | "Hard" | "Extreme"
-  prizePool?: string
-}
+import type { GameData } from "@/lib/game-data"
 
 interface GameCardProps {
-  game: Game
+  game: GameData
   index: number
 }
 
 const difficultyColors: Record<string, string> = {
-  Easy: "text-green-400 bg-green-400/10 border-green-400/30",
-  Medium: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30",
-  Hard: "text-orange-400 bg-orange-400/10 border-orange-400/30",
   Extreme: "text-red-400 bg-red-400/10 border-red-400/30",
 }
 
@@ -97,17 +81,22 @@ export function GameCard({ game, index }: GameCardProps) {
           </div>
         </div>
 
-        {/* Difficulty + Rating row */}
-        <div className="flex items-center justify-between mb-4 mt-3">
+        {/* Difficulty + Qualifying Score row */}
+        <div className="flex items-center justify-between mb-2 mt-3">
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${difficultyColors[game.difficulty]}`}>
             {game.difficulty}
           </span>
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className={`w-3 h-3 ${i < 4 ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/30"}`} />
-            ))}
-            <span className="text-xs text-muted-foreground ml-1">4.0</span>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Target className="w-3 h-3 text-primary" />
+            <span>Qualify: <span className="text-primary font-bold">{game.qualifyingScore.toLocaleString()}</span></span>
           </div>
+        </div>
+
+        {/* Earn Amount row */}
+        <div className="flex items-center justify-center mb-4">
+          <span className="text-xs font-bold text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 px-2.5 py-1 rounded-full">
+            Earn ${game.earnAmount.toFixed(2)} per {game.qualifyingScore} {game.scoreUnit}
+          </span>
         </div>
 
         {/* Play Button */}
@@ -116,7 +105,7 @@ export function GameCard({ game, index }: GameCardProps) {
             className="w-full bg-primary/10 border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground gap-2 transition-all duration-300 group/btn rounded-xl"
           >
             <Play className="w-4 h-4 transition-transform group-hover/btn:scale-110" />
-            Play Now
+            View Game
           </Button>
         </Link>
       </div>
