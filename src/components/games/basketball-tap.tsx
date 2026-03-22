@@ -44,11 +44,11 @@ const BALL_COLORS = [NEON_CYAN, NEON_GREEN, NEON_YELLOW, NEON_PINK, NEON_PURPLE,
 const FIREWORK_COLORS = ["#ff2d7b", "#00f0ff", "#39ff14", "#ffe600", "#aa44ff", "#ff8800", "#ff4466", "#44ddff"]
 
 // ─── Physics ───
-const GRAVITY = 650
-const BALL_RADIUS = 22
+const GRAVITY = 820
+const BALL_RADIUS = 20
 const HOOP_RIM_RADIUS = 6
-const HOOP_WIDTH = 80
-const MAX_LIVES = 3
+const HOOP_WIDTH = 68
+const MAX_LIVES = 2
 
 export function BasketballTapGame() {
     const canvasRef = useRef<HTMLCanvasElement>(null)

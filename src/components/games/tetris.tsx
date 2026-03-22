@@ -31,20 +31,20 @@ const SHAPES: number[][][] = [
 ]
 
 const LEVEL_SPEEDS = [
-  350, 300, 260, 220, 180, 150, 120, 95, 75, 58,
-  45, 35, 27, 21, 16, 12, 9, 7, 5, 4, 3,
+  280, 240, 200, 170, 140, 115, 90, 70, 55, 42,
+  32, 25, 19, 15, 11, 8, 6, 4, 3, 2, 1,
 ]
 
 // Lines needed per level (faster progression)
-const LINES_PER_LEVEL = 5
+const LINES_PER_LEVEL = 4
 
 // Garbage rows added after each piece at level thresholds
-// At level 5+ a garbage row every 12 pieces, at 10+ every 8, at 15+ every 5
+// At level 3+ a garbage row every 10 pieces, at 7+ every 6, at 12+ every 3
 function garbageInterval(level: number): number {
-  if (level >= 15) return 5
-  if (level >= 10) return 8
-  if (level >= 5) return 12
-  return 0 // no garbage below level 5
+  if (level >= 12) return 3
+  if (level >= 7) return 6
+  if (level >= 3) return 10
+  return 0 // no garbage below level 3
 }
 
 interface Piece {

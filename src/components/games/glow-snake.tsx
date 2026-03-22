@@ -26,11 +26,11 @@ interface FoodPulse {
 }
 
 const CELL_SIZE = 20
-const WINNING_SCORE = 50
+const WINNING_SCORE = 75
 
-const SPEED_MIN = 3
-const SPEED_MAX = 25
-const SPEED_DEFAULT = 13
+const SPEED_MIN = 5
+const SPEED_MAX = 30
+const SPEED_DEFAULT = 16
 
 const getSpeedColor = (speed: number): string => {
     const t = (speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)
@@ -89,7 +89,7 @@ export function GlowSnakeGame() {
     const trailParticlesRef = useRef<GlowParticle[]>([])
 
     const [gameState, setGameState] = useState<GameState>("menu")
-    const [speed, setSpeed] = useState(SPEED_DEFAULT)
+    const [speed] = useState(SPEED_MAX)
     const [score, setScore] = useState(0)
     const [highScore, setHighScore] = useState(0)
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
@@ -98,7 +98,7 @@ export function GlowSnakeGame() {
 
     const scoreRef = useRef(0)
     const gameStateRef = useRef<GameState>("menu")
-    const speedRef = useRef(SPEED_DEFAULT)
+    const speedRef = useRef(SPEED_MAX)
 
     // Sync refs
     useEffect(() => { gameStateRef.current = gameState }, [gameState])
@@ -906,107 +906,10 @@ export function GlowSnakeGame() {
                             </h1>
                             <p className="text-white/40 text-sm mb-8 font-mono">Neon Edition</p>
 
-                            <p className="text-white/50 text-xs mb-6 uppercase tracking-widest">Set Speed</p>
-
-                            {/* Speed slider */}
-                            <div className="w-64 mx-auto mb-6">
-                                {/* Speed number */}
-                                <div className="flex items-center justify-center mb-4">
-                                    <span
-                                        className="text-5xl font-bold font-mono transition-colors duration-200"
-                                        style={{
-                                            color: speedColor,
-                                            textShadow: `0 0 20px ${speedColor}88, 0 0 40px ${speedColor}44`,
-                                        }}
-                                    >
-                                        {speed}
-                                    </span>
-                                </div>
-
-                                {/* Label */}
-                                <div
-                                    className="text-xs font-mono font-bold uppercase tracking-widest mb-5 transition-colors duration-200"
-                                    style={{ color: speedColor }}
-                                >
-                                    {speedLabel}
-                                </div>
-
-                                {/* Slider track */}
-                                <div className="relative h-10 flex items-center">
-                                    {/* Background track */}
-                                    <div className="absolute left-0 right-0 h-2 rounded-full overflow-hidden"
-                                        style={{ background: "rgba(255,255,255,0.06)" }}>
-                                        {/* Filled portion */}
-                                        <div
-                                            className="h-full rounded-full transition-all duration-150"
-                                            style={{
-                                                width: `${((speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)) * 100}%`,
-                                                background: `linear-gradient(90deg, #00ff88, ${speedColor})`,
-                                                boxShadow: `0 0 12px ${speedColor}66, 0 0 4px ${speedColor}aa`,
-                                            }}
-                                        />
-                                    </div>
-
-                                    {/* Tick marks */}
-                                    <div className="absolute left-0 right-0 h-2 flex items-center pointer-events-none">
-                                        {Array.from({ length: SPEED_MAX - SPEED_MIN + 1 }, (_, i) => {
-                                            const v = i + SPEED_MIN
-                                            const pct = (i / (SPEED_MAX - SPEED_MIN)) * 100
-                                            const isMajor = v % 5 === 0
-                                            return (
-                                                <div
-                                                    key={v}
-                                                    className="absolute"
-                                                    style={{
-                                                        left: `${pct}%`,
-                                                        width: "1px",
-                                                        height: isMajor ? "10px" : "4px",
-                                                        background: v <= speed
-                                                            ? `${speedColor}88`
-                                                            : "rgba(255,255,255,0.1)",
-                                                        transform: "translateX(-50%)",
-                                                    }}
-                                                />
-                                            )
-                                        })}
-                                    </div>
-
-                                    {/* Thumb */}
-                                    <div
-                                        className="absolute transition-all duration-150"
-                                        style={{
-                                            left: `${((speed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN)) * 100}%`,
-                                            transform: "translateX(-50%)",
-                                        }}
-                                    >
-                                        <div
-                                            className="w-5 h-5 rounded-full border-2"
-                                            style={{
-                                                borderColor: speedColor,
-                                                background: `radial-gradient(circle at 35% 35%, #ffffff, ${speedColor})`,
-                                                boxShadow: `0 0 16px ${speedColor}88, 0 0 32px ${speedColor}44`,
-                                            }}
-                                        />
-                                    </div>
-
-                                    {/* Invisible range input */}
-                                    <input
-                                        type="range"
-                                        min={SPEED_MIN}
-                                        max={SPEED_MAX}
-                                        value={speed}
-                                        onChange={(e) => setSpeed(Number(e.target.value))}
-                                        className="absolute left-0 right-0 w-full h-10 opacity-0 cursor-pointer"
-                                        style={{ zIndex: 10 }}
-                                    />
-                                </div>
-
-                                {/* Speed range labels */}
-                                <div className="flex justify-between mt-2">
-                                    <span className="text-[9px] font-mono" style={{ color: "#00ff8866" }}>SLOW</span>
-                                    <span className="text-[9px] font-mono" style={{ color: "#ff336666" }}>FAST</span>
-                                </div>
-                            </div>
+                            <p className="text-white/50 text-xs mb-4 uppercase tracking-widest">Difficulty: EXTREME</p>
+                            <p className="text-xs font-mono font-bold uppercase tracking-widest mb-6" style={{ color: speedColor }}>
+                                Speed: {speed} — Insane
+                            </p>
 
                             {/* Play button */}
                             <button
@@ -1028,7 +931,6 @@ export function GlowSnakeGame() {
                         </div>
                     </div>
                 )}
-
                 {/* Game over overlay */}
                 {gameState === "gameover" && (
                     <div className="absolute inset-0 flex items-center justify-center rounded-xl"
@@ -1048,7 +950,7 @@ export function GlowSnakeGame() {
                                 </p>
                             )}
                             <p className="text-white/30 text-xs mb-8 font-mono">
-                                Speed {speed} · {speedLabel}
+                                Extreme · Insane Speed
                             </p>
 
                             <div className="flex flex-col gap-3 w-56 mx-auto">
@@ -1063,17 +965,6 @@ export function GlowSnakeGame() {
                                     }}
                                 >
                                     Play Again
-                                </button>
-                                <button
-                                    onClick={() => setGameState("menu")}
-                                    className="px-6 py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-200 hover:scale-105 active:scale-95"
-                                    style={{
-                                        border: `1px solid rgba(255,255,255,0.15)`,
-                                        color: "rgba(255,255,255,0.6)",
-                                        background: "rgba(255,255,255,0.03)",
-                                    }}
-                                >
-                                    Change Speed
                                 </button>
                             </div>
                         </div>

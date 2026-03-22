@@ -1,4 +1,4 @@
-import { FootballTapGame } from "@/components/games/football-tap"
+import { FootballTapPageClient } from "./client"
 
 export const metadata = {
   title: "Football Tap - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function FootballTapPage() {
-  return <FootballTapGame />
+  return <FootballTapPageClient />
 }

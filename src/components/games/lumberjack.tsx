@@ -5,13 +5,13 @@ import React, { useCallback, useEffect, useRef, useState } from "react"
 const VISIBLE_SEGMENTS = 10
 const SEGMENT_HEIGHT = 90 
 const CUTS_PER_TRUNK = 6
-const INITIAL_TIME = 100 
-const BASE_TIME_DECREASE_RATE = 1
-const MAX_TIME_DECREASE_RATE = 2
-const TIME_REGAIN_PER_CUT = 4
-const FAST_PLAY_BONUS_SLOWDOWN = 0.08 // How much to slow down timer when playing fast
-const FAST_PLAY_THRESHOLD_CUTS = 10 // Number of cuts to check for fast play
-const FAST_PLAY_WINDOW_MS = 1200 // 1.2 second window for fast play detection 
+const INITIAL_TIME = 75 
+const BASE_TIME_DECREASE_RATE = 0.22
+const MAX_TIME_DECREASE_RATE = 0.60
+const TIME_REGAIN_PER_CUT = 2.5
+const FAST_PLAY_BONUS_SLOWDOWN = 0.04 // How much to slow down timer when playing fast
+const FAST_PLAY_THRESHOLD_CUTS = 12 // Number of cuts to check for fast play
+const FAST_PLAY_WINDOW_MS = 900 // 0.9 second window for fast play detection 
 
 const ASSETS = {
   branch: "/lumberjack/images/branch.svg",

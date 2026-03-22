@@ -53,9 +53,9 @@ const GOAL_WIDTH_RATIO = 0.36
 const SCORE_PAUSE_MS = 1200
 
 const DIFFICULTY_CONFIG = {
-    easy: { speed: 5.0, reaction: 0.10, error: 18, aggression: 0.45, predict: 5, strikeRange: 3.5, label: "Easy", color: "#00ff88" },
-    medium: { speed: 7.5, reaction: 0.18, error: 7, aggression: 0.7, predict: 9, strikeRange: 4.5, label: "Medium", color: "#ffaa00" },
-    hard: { speed: 11.0, reaction: 0.28, error: 1.5, aggression: 0.95, predict: 14, strikeRange: 6, label: "Hard", color: "#ff3366" },
+    easy: { speed: 6.5, reaction: 0.14, error: 12, aggression: 0.55, predict: 7, strikeRange: 4.0, label: "Easy", color: "#00ff88" },
+    medium: { speed: 9.0, reaction: 0.22, error: 4, aggression: 0.80, predict: 11, strikeRange: 5.5, label: "Medium", color: "#ffaa00" },
+    hard: { speed: 13.0, reaction: 0.32, error: 0.8, aggression: 0.98, predict: 18, strikeRange: 7.5, label: "Hard", color: "#ff3366" },
 }
 
 const NEON_CYAN = "#00f0ff"
@@ -89,7 +89,7 @@ export function AirHockeyGame() {
     const prevPlayerPos = useRef<Vec2>({ x: 0, y: 0 })
 
     const [gameState, setGameState] = useState<GameState>("menu")
-    const [difficulty, setDifficulty] = useState<Difficulty>("medium")
+    const [difficulty] = useState<Difficulty>("hard")
     const [playerScore, setPlayerScore] = useState(0)
     const [cpuScore, setCpuScore] = useState(0)
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
@@ -99,7 +99,7 @@ export function AirHockeyGame() {
     const playerScoreRef = useRef(0)
     const cpuScoreRef = useRef(0)
     const gameStateRef = useRef<GameState>("menu")
-    const difficultyRef = useRef<Difficulty>("medium")
+    const difficultyRef = useRef<Difficulty>("hard")
     const scorePauseRef = useRef(0)
 
     const audioCtxRef = useRef<AudioContext | null>(null)
@@ -254,10 +254,9 @@ export function AirHockeyGame() {
         resetPuck(w, h, true)
     }, [resetPuck])
 
-    // Start game
-    const startGame = useCallback((diff: Difficulty) => {
-        setDifficulty(diff)
-        difficultyRef.current = diff
+    // Start game (always hard/extreme difficulty)
+    const startGame = useCallback((_diff?: Difficulty) => {
+        difficultyRef.current = "hard"
         setPlayerScore(0)
         setCpuScore(0)
         playerScoreRef.current = 0
@@ -1081,26 +1080,20 @@ export function AirHockeyGame() {
                             </h1>
                             <p className="text-white/40 text-sm mb-8 font-mono">Glow Edition</p>
 
-                            <p className="text-white/50 text-xs mb-4 uppercase tracking-widest">Select Difficulty</p>
+                            <p className="text-white/50 text-xs mb-4 uppercase tracking-widest">Difficulty: EXTREME</p>
                             <div className="flex flex-col gap-3 w-56 mx-auto">
-                                {(["easy", "medium", "hard"] as Difficulty[]).map((d) => {
-                                    const c = DIFFICULTY_CONFIG[d]
-                                    return (
-                                        <button
-                                            key={d}
-                                            onClick={() => startGame(d)}
-                                            className="relative px-6 py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-200 hover:scale-105 active:scale-95"
-                                            style={{
-                                                border: `1px solid ${c.color}44`,
-                                                color: c.color,
-                                                background: `${c.color}11`,
-                                                boxShadow: `0 0 20px ${c.color}15`,
-                                            }}
-                                        >
-                                            {c.label}
-                                        </button>
-                                    )
-                                })}
+                                <button
+                                    onClick={() => startGame("hard")}
+                                    className="relative px-6 py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-200 hover:scale-105 active:scale-95"
+                                    style={{
+                                        border: `1px solid ${NEON_PINK}44`,
+                                        color: NEON_PINK,
+                                        background: `${NEON_PINK}11`,
+                                        boxShadow: `0 0 20px ${NEON_PINK}15`,
+                                    }}
+                                >
+                                    Play
+                                </button>
                             </div>
 
                             <p className="text-white/25 text-[10px] mt-8 font-mono">
@@ -1124,12 +1117,12 @@ export function AirHockeyGame() {
                                 {playerScore} – {cpuScore}
                             </p>
                             <p className="text-white/30 text-xs mb-8 font-mono">
-                                {cfg.label} difficulty
+                                Extreme difficulty
                             </p>
 
                             <div className="flex flex-col gap-3 w-56 mx-auto">
                                 <button
-                                    onClick={() => startGame(difficulty)}
+                                    onClick={() => startGame("hard")}
                                     className="px-6 py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-200 hover:scale-105 active:scale-95"
                                     style={{
                                         border: `1px solid ${NEON_CYAN}44`,
@@ -1139,17 +1132,6 @@ export function AirHockeyGame() {
                                     }}
                                 >
                                     Play Again
-                                </button>
-                                <button
-                                    onClick={() => setGameState("menu")}
-                                    className="px-6 py-3 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-200 hover:scale-105 active:scale-95"
-                                    style={{
-                                        border: `1px solid rgba(255,255,255,0.15)`,
-                                        color: "rgba(255,255,255,0.6)",
-                                        background: "rgba(255,255,255,0.03)",
-                                    }}
-                                >
-                                    Change Difficulty
                                 </button>
                             </div>
                         </div>

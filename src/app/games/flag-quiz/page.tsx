@@ -1,4 +1,4 @@
-import { FlagQuizGame } from "@/components/games/flag-quiz"
+import { FlagQuizPageClient } from "./client"
 
 export const metadata = {
   title: "Flag Quiz - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function FlagQuizPage() {
-  return <FlagQuizGame />
+  return <FlagQuizPageClient />
 }

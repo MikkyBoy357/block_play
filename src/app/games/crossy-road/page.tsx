@@ -1,4 +1,4 @@
-import { CrossyRoadGame } from "@/components/games/crossy-road"
+import { CrossyRoadPageClient } from "./client"
 
 export const metadata = {
   title: "Crossy Road - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function CrossyRoadPage() {
-  return <CrossyRoadGame />
+  return <CrossyRoadPageClient />
 }

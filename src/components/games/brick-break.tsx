@@ -13,15 +13,15 @@ const BRICK_OFFSET_Y = 52
 const BRICK_W = (WIDTH - (COLS + 1) * BRICK_PAD) / COLS
 const BRICK_H = 14
 const PADDLE_H = 10
-const PADDLE_INIT_W = 56
+const PADDLE_INIT_W = 46
 const BALL_R = 4
 const PADDLE_Y = HEIGHT - 32
 
 // Speed
-const BASE_BALL_SPEED = 4.2
-const SPEED_PER_LEVEL = 0.3
-const MAX_SPEED = 11
-const PADDLE_SPEED = 7
+const BASE_BALL_SPEED = 5.0
+const SPEED_PER_LEVEL = 0.45
+const MAX_SPEED = 14
+const PADDLE_SPEED = 6
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Phase = "idle" | "launch" | "playing" | "dying" | "gameover"

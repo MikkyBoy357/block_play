@@ -84,10 +84,10 @@ const BALL_COLORS = [NEON_CYAN, NEON_GREEN, NEON_YELLOW, NEON_PINK, NEON_PURPLE,
 const FIREWORK_COLORS = ["#ff2d7b", "#00f0ff", "#39ff14", "#ffe600", "#aa44ff", "#ff8800", "#ff4466", "#44ddff"]
 
 // ─── Physics ───
-const GRAVITY = 1050 // px/s²
-const KICK_VY = -580 // upward velocity on tap
-const BALL_RADIUS = 24
-const HORIZONTAL_DRIFT = 120
+const GRAVITY = 1280 // px/s²
+const KICK_VY = -520 // upward velocity on tap
+const BALL_RADIUS = 22
+const HORIZONTAL_DRIFT = 160
 const WALL_BOUNCE = 0.45
 const AIR_DRAG = 0.996
 

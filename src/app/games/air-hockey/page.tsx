@@ -1,4 +1,4 @@
-import { AirHockeyGame } from "@/components/games/air-hockey"
+import { AirHockeyPageClient } from "./client"
 
 export const metadata = {
   title: "Air Hockey - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function AirHockeyPage() {
-  return <AirHockeyGame />
+  return <AirHockeyPageClient />
 }

@@ -1,4 +1,4 @@
-import { MathTeaserGame } from "@/components/games/math-teaser"
+import { MathTeaserPageClient } from "./client"
 
 export const metadata = {
   title: "Math Teaser - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function MathTeaserPage() {
-  return <MathTeaserGame />
+  return <MathTeaserPageClient />
 }

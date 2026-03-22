@@ -1,4 +1,4 @@
-import { FlappyPlaneGame } from "@/components/games/flappy-plane"
+import { FlappyPlanePageClient } from "./client"
 
 export const metadata = {
   title: "Flappy Plane - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function FlappyPlanePage() {
-  return <FlappyPlaneGame />
+  return <FlappyPlanePageClient />
 }

@@ -23,13 +23,13 @@ const ASSETS = {
 }
 
 // Game constants
-const GRAVITY = 0.11
-const FLAP_POWER = -3.75
-const PIPE_SPEED = 2.5
-const PIPE_GAP = 110
+const GRAVITY = 0.145
+const FLAP_POWER = -3.5
+const PIPE_SPEED = 3.2
+const PIPE_GAP = 88
 const PIPE_WIDTH = 52
 const PIPE_TIP_HEIGHT = 26
-const PIPE_SPAWN_RATE = 150 // frames between pipe spawns
+const PIPE_SPAWN_RATE = 115 // frames between pipe spawns
 const LAND_HEIGHT = 80
 const GROUND_DEPTH = 150 // extra ground below the land
 const CEILING_HEIGHT = 24 // natural height of the ceiling image

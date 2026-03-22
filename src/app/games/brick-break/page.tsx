@@ -1,4 +1,4 @@
-import { BrickBreakGame } from "@/components/games/brick-break"
+import { BrickBreakPageClient } from "./client"
 
 export const metadata = {
   title: "Brick Break - blockPlay",
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function BrickBreakPage() {
-  return <BrickBreakGame />
+  return <BrickBreakPageClient />
 }

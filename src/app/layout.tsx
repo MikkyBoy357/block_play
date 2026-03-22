@@ -14,12 +14,17 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "blockPlay | Web3 Gaming Platform",
-  description: "Play browser-based games, compete globally, and earn rewards on the futuristic Web3 gaming platform.",
+  title: "blockPlay | Play Childhood Games. Win Real Money.",
+  description: "Compete in classic childhood games against players worldwide. Subscribe, play, climb leaderboards, and win real cash prizes every week.",
+  keywords: ["gaming", "play to earn", "childhood games", "competitive gaming", "cash prizes", "leaderboard"],
 }
 
 export const viewport: Viewport = {
   themeColor: "#00ff88",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({
@@ -29,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans`}>{children}</body>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>{children}</body>
     </html>
   )
 }
