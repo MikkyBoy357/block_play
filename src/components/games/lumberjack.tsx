@@ -6,8 +6,8 @@ const VISIBLE_SEGMENTS = 10
 const SEGMENT_HEIGHT = 90 
 const CUTS_PER_TRUNK = 6
 const INITIAL_TIME = 100 
-const BASE_TIME_DECREASE_RATE = 0.15
-const MAX_TIME_DECREASE_RATE = 0.45
+const BASE_TIME_DECREASE_RATE = 1
+const MAX_TIME_DECREASE_RATE = 2
 const TIME_REGAIN_PER_CUT = 4
 const FAST_PLAY_BONUS_SLOWDOWN = 0.08 // How much to slow down timer when playing fast
 const FAST_PLAY_THRESHOLD_CUTS = 10 // Number of cuts to check for fast play
@@ -236,7 +236,7 @@ export function LumberjackGame() {
   }, [handleChop])
 
   return (
-    <div className="fixed inset-0 bg-sky-200 flex flex-col items-center justify-between overflow-hidden select-none">
+    <div className="fixed inset-0 bg-gray-800 flex flex-col items-center justify-center overflow-hidden select-none">
       <style>{`
         @keyframes branch-fly-left {
           0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
@@ -265,45 +265,18 @@ export function LumberjackGame() {
         }
       `}</style>
 
-      {/* TOP REGION */}
-      <div className="relative w-full h-1/4 flex flex-col items-center pt-10 z-50">
-        {/* Animated clouds background - slow layer (big clouds) */}
-        <div className="absolute top-0 left-0 w-full h-1/2 overflow-hidden -z-10 opacity-40">
+      {/* Game Card */}
+      <div className="relative z-10 w-full max-w-[420px] bg-sky-200 overflow-hidden flex-1 max-h-[75vh]" style={{ minHeight: 0 }}>
+        {/* Clouds - slow layer */}
+        <div className="absolute top-0 left-0 w-full h-40 overflow-hidden opacity-40 z-0">
           <div className="animate-clouds-slow flex h-full" style={{ width: '200%' }}>
             <div 
-              className="h-full w-1/2 flex items-center justify-around"
+              className="h-full w-1/2"
               style={{
                 backgroundImage: `url(${ASSETS.clouds})`,
                 backgroundRepeat: 'repeat-x',
-                backgroundSize: 'auto 120%',
+                backgroundSize: 'auto 100%',
                 backgroundPosition: 'left center',
-                paddingLeft: '100px'
-              }}
-            />
-            <div 
-              className="h-full w-1/2 flex items-center justify-around"
-              style={{
-                backgroundImage: `url(${ASSETS.clouds})`,
-                backgroundRepeat: 'repeat-x',
-                backgroundSize: 'auto 120%',
-                backgroundPosition: 'left center',
-                paddingLeft: '100px'
-              }}
-            />
-          </div>
-        </div>
-        
-        {/* Animated clouds foreground - fast layer (small clouds) */}
-        <div className="absolute top-4 left-0 w-full h-1/2 overflow-hidden -z-10 opacity-60">
-          <div className="animate-clouds-fast flex h-full" style={{ width: '200%' }}>
-            <div 
-              className="h-full w-3/4"
-              style={{
-                backgroundImage: `url(${ASSETS.clouds})`,
-                backgroundRepeat: 'repeat-x',
-                backgroundSize: 'auto 80%',
-                backgroundPosition: 'left center',
-                paddingLeft: '150px'
               }}
             />
             <div 
@@ -311,102 +284,143 @@ export function LumberjackGame() {
               style={{
                 backgroundImage: `url(${ASSETS.clouds})`,
                 backgroundRepeat: 'repeat-x',
-                backgroundSize: 'auto 80%',
+                backgroundSize: 'auto 100%',
                 backgroundPosition: 'left center',
-                paddingLeft: '150px'
               }}
             />
           </div>
         </div>
         
-        <div className="relative w-44 h-8 border-4 border-[#5D2E0C] bg-[#F3E5AB] rounded-full overflow-hidden mb-4">
+        {/* Clouds - fast layer */}
+        <div className="absolute top-8 left-0 w-full h-32 overflow-hidden opacity-50 z-0">
+          <div className="animate-clouds-fast flex h-full" style={{ width: '200%' }}>
+            <div 
+              className="h-full w-1/2"
+              style={{
+                backgroundImage: `url(${ASSETS.clouds})`,
+                backgroundRepeat: 'repeat-x',
+                backgroundSize: 'auto 70%',
+                backgroundPosition: 'left center',
+              }}
+            />
+            <div 
+              className="h-full w-1/2"
+              style={{
+                backgroundImage: `url(${ASSETS.clouds})`,
+                backgroundRepeat: 'repeat-x',
+                backgroundSize: 'auto 70%',
+                backgroundPosition: 'left center',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Background trees (subtle) */}
+        <img src={ASSETS.trees} className="absolute bottom-16 opacity-20 w-full pointer-events-none z-0" alt="" />
+
+        {/* Timer bar */}
+        <div className="relative z-30 flex flex-col items-center pt-3 px-4">
+          <div className="w-28 h-4 border-3 border-[#82643a] bg-[#F3E5AB] rounded-full overflow-hidden">
+            <div 
+              className="h-full transition-all duration-100" 
+              style={{ 
+                width: `${timeLeft}%`, 
+                backgroundColor: timeLeft > 35 ? "#4ade80" : "#ef4444" 
+              }} 
+            />
+          </div>
+          <div className="text-3xl font-black text-white drop-shadow-lg mt-1">
+            {score}
+          </div>
+        </div>
+
+        {/* Tree area */}
+        <div className="absolute inset-0 top-24 flex justify-center z-10">
+          {/* Trunk */}
           <div 
-            className="h-full transition-all duration-100" 
+            className="absolute bottom-0 w-[70px] z-20"
             style={{ 
-              width: `${timeLeft}%`, 
-              backgroundColor: timeLeft > 35 ? "#4ade80" : "#ef4444" 
-            }} 
+              height: '150%',
+              backgroundImage: `url(${ASSETS.trunk})`,
+              backgroundSize: `50px`,
+              backgroundPosition: `center ${score * SEGMENT_HEIGHT}px`,
+              backgroundRepeat: 'repeat-y',
+              maskImage: 'linear-gradient(to top, transparent 45px, black 45px)',
+              WebkitMaskImage: 'linear-gradient(to top, transparent 45px, black 45px)',
+            }}
           />
-        </div>
 
-        <div className="text-7xl font-black text-white drop-shadow-lg">
-          {score}
-        </div>
-      </div>
-
-      {/* MIDDLE REGION (The Tree) */}
-      <div className="relative w-full flex-1 flex justify-center">
-        {/* Full-height Trunk Container */}
-        <div 
-          className="absolute bottom-0 mx-auto w-[80px] z-0"
-          style={{ 
-            height: '200vh', // Ensure it extends far above the screen
-            backgroundImage: `url(${ASSETS.trunk})`,
-            backgroundSize: `80px ${SEGMENT_HEIGHT * CUTS_PER_TRUNK}px`,
-            backgroundPosition: `center ${score * SEGMENT_HEIGHT}px`,
-            backgroundRepeat: 'repeat-y'
-          }}
-        />
-
-        {/* Ground/Root at the base of the tree */}
-        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 flex items-end -z-20 pointer-events-none">
-          <img src={ASSETS.groundLeft} className="h-28" alt="" />
-          <img src={ASSETS.groundRight} className="h-28 -ml-1" alt="" />
-        </div>
-
-        <div className="relative w-64 h-full -z-10">
-          <div className="absolute bottom-0 w-full flex flex-col-reverse items-center">
-            {segments.map((seg) => (
-              <div key={seg.id} className="relative w-full" style={{ height: SEGMENT_HEIGHT }}>
-                {seg.side !== "none" && (
-                  <img 
-                    src={ASSETS.branch} 
-                    className={`absolute bottom-2 w-40 transition-all duration-100 ${
-                      seg.side === "left" ? "right-[55%] scale-x-[-1]" : "left-[55%]"
-                    }`}
-                    alt="branch"
-                  />
-                )}
-              </div>
-            ))}
+          {/* Ground island */}
+          <div className="absolute bottom-[-0px] left-0 right-0 flex items-end z-10 pointer-events-none">
+            <img src={ASSETS.groundLeft} className="h-24 w-1/2 object-cover object-right" alt="" />
+            <img src={ASSETS.groundRight} className="h-24 w-1/2 object-cover object-left" alt="" />
           </div>
 
-          <div className="absolute bottom-[90px] w-full h-full pointer-events-none">
-            {fallingBranches.map(fb => (
-              <img 
-                key={fb.id}
-                src={ASSETS.branch} 
-                className={`absolute bottom-2 w-48 ${
-                  fb.side === "left" ? "right-[60%] scale-x-[-1] animate-fall-left" : "left-[60%] animate-fall-right"
-                }`}
-                alt=""
-              />
-            ))}
+          {/* Stones */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+            <img src={ASSETS.stones} className="w-16" alt="" />
           </div>
 
+          {/* Branches */}
+          <div className="relative w-48 h-full z-[5]">
+            <div className="absolute bottom-0 w-full flex flex-col-reverse items-center">
+              {segments.map((seg) => (
+                <div key={seg.id} className="relative w-full" style={{ height: SEGMENT_HEIGHT }}>
+                  {seg.side !== "none" && (
+                    <img 
+                      src={ASSETS.branch} 
+                      className={`absolute bottom-2 w-32 transition-all duration-100 ${
+                        seg.side === "left" ? "right-[55%] scale-x-[-1]" : "left-[55%]"
+                      }`}
+                      alt="branch"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Falling branches */}
+            <div className="absolute bottom-[90px] w-full h-full pointer-events-none">
+              {fallingBranches.map(fb => (
+                <img 
+                  key={fb.id}
+                  src={ASSETS.branch} 
+                  className={`absolute bottom-2 w-28 ${
+                    fb.side === "left" ? "right-[60%] animate-fall-left" : "left-[60%] animate-fall-right"
+                  }`}
+                  alt=""
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Lumberjack */}
           <div 
-            className="absolute bottom-0 transition-all duration-75 z-30"
+            className="absolute bottom-[60] transition-all duration-75 z-40"
             style={{ 
               left: '50%',
-              transform: playerSide === "left" ? "translateX(-160px)" : "translateX(60px)",
-              width: 100
+              transform: playerSide === "left" ? "translateX(-120px)" : "translateX(45px)",
+              width: 55
             }}
           >
             <div className="relative">
               <img 
                 src={gameStatus === "playing" ? ASSETS.lumberjack : ASSETS.died} 
-                className={`w-22 relative z-10 ${playerSide === 'left' ? 'scale-x-[-1]' : ''}`} 
+                className={`w-16 relative z-10 ${playerSide === 'left' ? 'scale-x-[-1]' : ''}`} 
                 alt="body" 
               />
               {gameStatus === "playing" && (
                 <img 
                   src={isChopping ? ASSETS.hand_down : ASSETS.hand_up}
-                  className={`absolute z-20 w-16 h-16 transition-transform ${
+                  className={`absolute z-20 w-11 h-11 transition-transform ${
                     playerSide === 'left' ? 'scale-x-[-1]' : ''
                   }`}
                   style={{
-                    top: isChopping ? '40px' : '5px',
-                    ...(playerSide === 'right' ? { right: '-20px' } : { left: '-20px' })
+                    top: isChopping ? '30px' : '2px',
+                    ...(isChopping
+                      ? (playerSide === 'right' ? { left: '-14px' } : { right: '-14px' })
+                      : (playerSide === 'right' ? { right: '-14px' } : { left: '-14px' })
+                    )
                   }}
                   alt="hand"
                 />
@@ -416,22 +430,14 @@ export function LumberjackGame() {
         </div>
       </div>
 
-      {/* BOTTOM REGION */}
-      <div className="relative w-full h-1/4 flex flex-col items-center justify-end pb-10 z-50">
-        <img src={ASSETS.trees} className="absolute bottom-32 opacity-30 w-full pointer-events-none" alt="" />
-        
-        <div className="relative mb-20">
-           <img src={ASSETS.stones} className="w-24 z-20" alt="stones" />
-        </div>
-
-        <div className="flex gap-24">
-          <button onMouseDown={() => handleChop("left")} className="active:scale-90 transition-transform">
-            <img src={ASSETS.leftArrow} className="w-24" alt="Left" />
-          </button>
-          <button onMouseDown={() => handleChop("right")} className="active:scale-90 transition-transform">
-            <img src={ASSETS.rightArrow} className="w-24" alt="Right" />
-          </button>
-        </div>
+      {/* Controls (below game card) */}
+      <div className="relative z-0 w-full max-w-[420px] flex justify-center items-center gap-20 bg-white" style={{ height: '25vh' }}>
+        <button onMouseDown={() => handleChop("left")} className="active:scale-90 transition-transform">
+          <img src={ASSETS.leftArrow} className="w-20" alt="Left" />
+        </button>
+        <button onMouseDown={() => handleChop("right")} className="active:scale-90 transition-transform">
+          <img src={ASSETS.rightArrow} className="w-20" alt="Right" />
+        </button>
       </div>
 
       {gameStatus === "game-over" && (
