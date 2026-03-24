@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { Trophy, Clock, DollarSign, Flame, TrendingUp, Zap } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
 
 export function LiveTicker() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, mins: 0, secs: 0 })
+  const [prizePool, setPrizePool] = useState("$2,455")
+  const [playingNow, setPlayingNow] = useState("1,847")
+  const [gamesToday, setGamesToday] = useState("12,340")
 
   useEffect(() => {
     const calcTimeLeft = () => {
@@ -29,6 +33,29 @@ export function LiveTicker() {
     return () => clearInterval(interval)
   }, [])
 
+  // Fetch live stats from Supabase
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase.from("platform_stats").select("*").single()
+        if (data) {
+          const pool = Number(data.weekly_prize_pool)
+          if (pool > 0) setPrizePool(`$${pool.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`)
+          const now = Number(data.playing_now)
+          if (now > 0) setPlayingNow(now.toLocaleString())
+          const today = Number(data.games_today)
+          if (today > 0) setGamesToday(today.toLocaleString())
+        }
+      } catch {
+        // Keep defaults on error
+      }
+    }
+    fetchStats()
+    const interval = setInterval(fetchStats, 30_000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <section className="py-8 px-4 border-y border-border/20">
       <div className="container mx-auto">
@@ -40,7 +67,7 @@ export function LiveTicker() {
             </div>
             <div>
               <div className="text-xs text-muted-foreground uppercase tracking-wider">This Week&apos;s Prize Pool</div>
-              <div className="text-2xl sm:text-3xl font-black text-green-400">$2,455</div>
+              <div className="text-2xl sm:text-3xl font-black text-green-400">{prizePool}</div>
             </div>
           </div>
 
@@ -74,7 +101,7 @@ export function LiveTicker() {
             <div className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-400" />
               <div>
-                <div className="text-sm font-bold text-foreground">1,847</div>
+                <div className="text-sm font-bold text-foreground">{playingNow}</div>
                 <div className="text-xs text-muted-foreground">Playing Now</div>
               </div>
             </div>
@@ -82,7 +109,7 @@ export function LiveTicker() {
             <div className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-primary" />
               <div>
-                <div className="text-sm font-bold text-foreground">12,340</div>
+                <div className="text-sm font-bold text-foreground">{gamesToday}</div>
                 <div className="text-xs text-muted-foreground">Games Today</div>
               </div>
             </div>

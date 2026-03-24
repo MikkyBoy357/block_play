@@ -31,7 +31,6 @@ export function useGameSession(): UseGameSessionReturn {
   const startGame = useCallback(async (gameId: string) => {
     setIsLoading(true)
     setError(null)
-    // anti-cheat disabled: do not track cheating
     
     try {
       const response = await fetch("/api/game/start", {
@@ -86,7 +85,23 @@ export function useGameSession(): UseGameSessionReturn {
       const data = await response.json()
       const finalScore = data.finalScore as number
 
-      // Check if player qualified and can earn
+      // Server returns DB-backed earning data for logged-in users
+      if (data.earned !== undefined && data.earned !== null) {
+        const game = getGameBySlug(session.gameId)
+        return {
+          verified: data.verified,
+          finalScore,
+          earning: {
+            qualified: data.qualified ?? false,
+            earned: data.earned,
+            totalWeekly: data.totalWeekly ?? 0,
+            capped: data.capped ?? false,
+            multiplier: game ? Math.floor(finalScore / game.qualifyingScore) : 0,
+          },
+        }
+      }
+
+      // Fallback: localStorage-based earning for anonymous players
       const game = getGameBySlug(session.gameId)
       const earning: EarningResult = {
         qualified: false,
@@ -100,7 +115,6 @@ export function useGameSession(): UseGameSessionReturn {
         earning.qualified = true
         earning.multiplier = Math.floor(finalScore / game.qualifyingScore)
 
-        // Default to weekly tier; in production this would come from auth/user profile
         const tier: SubscriptionTier = "weekly"
         const { canEarn: canStillEarn } = canEarn(tier)
 
