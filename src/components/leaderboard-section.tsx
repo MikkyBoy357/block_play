@@ -43,6 +43,13 @@ const gameFilters = [
   { id: "glow-snake", label: "Snake" },
   { id: "brick-break", label: "Brick Break" },
   { id: "math-teaser", label: "Math Teaser" },
+  { id: "football-tap", label: "Football Tap" },
+  { id: "basketball-tap", label: "Basketball Tap" },
+  { id: "lumberjack", label: "Lumberjack" },
+  { id: "flag-quiz", label: "Flag Quiz" },
+  { id: "gravity-run", label: "Gravity Run" },
+  { id: "air-hockey", label: "Air Hockey" },
+  { id: "crossy-road", label: "Crossy Road" },
 ]
 
 const tierColors: Record<string, string> = {

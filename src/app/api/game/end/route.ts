@@ -16,14 +16,16 @@ function getCurrentWeekStart(): string {
 
 export async function POST(request: Request) {
   try {
-    const { session } = await request.json() as { session: GameSession }
+    const { session, finalScore: clientScore } = await request.json() as { session: GameSession; finalScore?: number }
     
     if (!session) {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 })
     }
     
     const duration = Date.now() - session.startTime
-    const finalScore = session.score
+    // Use client-reported score if provided (games track score locally),
+    // otherwise fall back to server-tracked session score
+    const finalScore = typeof clientScore === "number" && clientScore >= 0 ? clientScore : session.score
     const game = getGameBySlug(session.gameId)
     const qualified = game ? finalScore >= game.qualifyingScore : false
 
@@ -34,6 +36,24 @@ export async function POST(request: Request) {
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
+
+    // Ensure profile exists for this user (may be missing for pre-trigger signups)
+    if (user) {
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .single()
+
+      if (!existingProfile) {
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          username: user.user_metadata?.username ?? user.email?.split("@")[0] ?? null,
+          display_name: user.user_metadata?.display_name ?? user.user_metadata?.username ?? null,
+          avatar_url: user.user_metadata?.avatar_url ?? null,
+        }, { onConflict: "id" })
+      }
+    }
 
     if (user && game && qualified) {
       // Get user profile for subscription tier
@@ -84,8 +104,9 @@ export async function POST(request: Request) {
     }
 
     // Save game session to DB for logged-in users
+    let saved = false
     if (user) {
-      await supabase.from("game_sessions").insert({
+      const { error: insertError } = await supabase.from("game_sessions").insert({
         user_id: user.id,
         game_slug: session.gameId,
         score: finalScore,
@@ -95,6 +116,10 @@ export async function POST(request: Request) {
         qualified,
         earned,
       })
+      saved = !insertError
+      if (insertError) {
+        console.error("Failed to save game session:", insertError.message)
+      }
     }
 
     return NextResponse.json({
@@ -106,8 +131,10 @@ export async function POST(request: Request) {
       totalWeekly,
       qualified,
       capped,
+      saved,
     })
-  } catch {
+  } catch (err) {
+    console.error("Game end error:", err)
     return NextResponse.json({ error: "Failed to end game" }, { status: 500 })
   }
 }

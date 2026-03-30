@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState, useCallback } from "react"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 type GameState = "menu" | "playing" | "gameover"
 
@@ -95,6 +96,7 @@ export function FootballTapGame() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const animRef = useRef<number>(0)
     const lastTimeRef = useRef<number>(0)
+    const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
     // Ball state
     const ballXRef = useRef(0)
@@ -360,7 +362,8 @@ export function FootballTapGame() {
         scoreRef.current = 0
         setScore(0)
         setGameState("playing")
-    }, [canvasSize])
+        resetEmitter()
+    }, [canvasSize, resetEmitter])
 
     // ─── Kick handler ───
     const handleKick = useCallback((clientX: number, clientY: number) => {
@@ -568,6 +571,7 @@ export function FootballTapGame() {
                         localStorage.setItem("footballTap_highScore", String(scoreRef.current))
                     }
                     setGameState("gameover")
+                    emitGameEnd("football-tap", scoreRef.current)
                 }
 
                 // Spawn power-ups

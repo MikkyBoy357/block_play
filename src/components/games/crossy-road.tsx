@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState, useCallback } from "react"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 type GameState = "menu" | "playing" | "dying" | "gameover"
 
@@ -207,6 +208,7 @@ export function CrossyRoadGame() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const animRef = useRef<number>(0)
     const lastTimeRef = useRef<number>(0)
+    const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
     // Player state — world coordinates. y = row index (starts 0, increases upward)
     const playerXRef = useRef(0) // pixel x
@@ -573,7 +575,8 @@ export function CrossyRoadGame() {
 
         ensureLanes(0, w)
         setGameState("playing")
-    }, [ensureLanes])
+        resetEmitter()
+    }, [ensureLanes, resetEmitter])
 
     // ─── Canvas sizing ───
     useEffect(() => {
@@ -961,6 +964,7 @@ export function CrossyRoadGame() {
                 dyingTimerRef.current -= dt
                 if (dyingTimerRef.current <= 0) {
                     setGameState("gameover")
+                    emitGameEnd("crossy-road", scoreRef.current)
                 }
             }
 

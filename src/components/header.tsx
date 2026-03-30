@@ -90,9 +90,10 @@ export function Header() {
             <div className="w-20 h-9 rounded-lg bg-white/5 animate-pulse" />
           ) : user ? (
             <>
-              <div
+              <Link
+                href="/profile"
                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg glass border border-border/40 cursor-pointer hover:border-primary/30 transition-all"
-                onClick={() => { setAvatarPickerOpen(true); playClick() }}
+                onClick={playClick}
               >
                 {renderAvatar("w-7 h-7", "text-sm")}
                 <span className="text-sm font-medium text-foreground max-w-[100px] truncate">
@@ -103,7 +104,7 @@ export function Header() {
                     {user.subscription_tier}
                   </span>
                 )}
-              </div>
+              </Link>
               <Button
                 size="sm"
                 className="bg-primary/10 border border-primary/40 hover:bg-primary/20 text-primary gap-1.5 text-sm"
@@ -164,13 +165,14 @@ export function Header() {
             <div className="border-t border-border/50 mt-2 pt-3">
               {user ? (
                 <>
-                  <div
-                    className="flex items-center gap-2 px-4 py-2 mb-2 cursor-pointer"
-                    onClick={() => { setAvatarPickerOpen(true); setMobileMenuOpen(false); playClick() }}
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-2 px-4 py-2 mb-2"
+                    onClick={() => { setMobileMenuOpen(false); playClick() }}
                   >
                     {renderAvatar("w-7 h-7", "text-sm")}
                     <span className="text-sm font-medium text-foreground">{user.username ?? user.email}</span>
-                  </div>
+                  </Link>
                   <Button
                     className="w-full bg-primary/10 border border-primary/40 text-primary gap-2"
                     onClick={() => { signOut(); setMobileMenuOpen(false); playClick() }}

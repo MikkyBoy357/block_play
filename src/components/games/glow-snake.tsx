@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState, useCallback } from "react"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 type GameState = "menu" | "playing" | "paused" | "gameover"
 type Direction = "up" | "down" | "left" | "right"
@@ -79,6 +80,7 @@ export function GlowSnakeGame() {
     const animRef = useRef<number>(0)
     const lastTimeRef = useRef<number>(0)
     const moveTimerRef = useRef<number>(0)
+    const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
     const snakeRef = useRef<Vec2[]>([])
     const directionRef = useRef<Direction>("right")
@@ -264,7 +266,8 @@ export function GlowSnakeGame() {
         placeFood(cols, rows)
 
         setGameState("playing")
-    }, [placeFood])
+        resetEmitter()
+    }, [placeFood, resetEmitter])
 
     // ─── Canvas sizing ───
     useEffect(() => {
@@ -402,6 +405,7 @@ export function GlowSnakeGame() {
                     if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) {
                         // Death — wall hit
                         setGameState("gameover")
+                        emitGameEnd("glow-snake", scoreRef.current)
                         playDeathSound()
                         // Death explosion
                         const hx = head.x * CELL_SIZE + CELL_SIZE / 2
@@ -429,6 +433,7 @@ export function GlowSnakeGame() {
                     // Self collision
                     if (snake.some(s => s.x === nx && s.y === ny)) {
                         setGameState("gameover")
+                        emitGameEnd("glow-snake", scoreRef.current)
                         playDeathSound()
                         const hx = head.x * CELL_SIZE + CELL_SIZE / 2
                         const hy = head.y * CELL_SIZE + CELL_SIZE / 2
@@ -467,6 +472,7 @@ export function GlowSnakeGame() {
                         // Check win
                         if (scoreRef.current >= WINNING_SCORE) {
                             setGameState("gameover")
+                            emitGameEnd("glow-snake", scoreRef.current)
                             playWinSound()
                             if (scoreRef.current > highScore) {
                                 setHighScore(scoreRef.current)

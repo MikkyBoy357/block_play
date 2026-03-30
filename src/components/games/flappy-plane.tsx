@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
-import { useGameSession } from "@/hooks/use-game-session"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 const ASSETS = {
   plane: "/flappy_plane/images/plane.png",
@@ -76,7 +76,7 @@ export function FlappyPlaneGame() {
   const explosionSoundRef = useRef<HTMLAudioElement | null>(null)
   const bgMusicRef = useRef<HTMLAudioElement | null>(null)
 
-  const { session, startGame, recordAction, endGame } = useGameSession()
+  const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
   // Load all images
   useEffect(() => {
@@ -177,7 +177,7 @@ export function FlappyPlaneGame() {
       resetGame()
       gameStateRef.current = "playing"
       setGameState("playing")
-      startGame("flappy-plane")
+      resetEmitter()
       // Start background music
       if (bgMusicRef.current) {
         // Clear any ongoing fade-out from previous game
@@ -202,7 +202,7 @@ export function FlappyPlaneGame() {
     }
 
     planeRef.current.vy = FLAP_POWER
-  }, [resetGame, startGame])
+  }, [resetGame, resetEmitter])
 
   const restartFromGameOver = useCallback(() => {
     resetGame()
@@ -356,7 +356,6 @@ export function FlappyPlaneGame() {
             pipe.scored = true
             scoreRef.current++
             setScore(scoreRef.current)
-            recordAction("score")
           }
         }
 
@@ -407,7 +406,7 @@ export function FlappyPlaneGame() {
             setHighScore(highScoreRef.current)
             localStorage.setItem("flappy-plane-highscore", String(highScoreRef.current))
           }
-          endGame()
+          emitGameEnd("flappy-plane", scoreRef.current)
         }
       }
 
@@ -655,7 +654,7 @@ export function FlappyPlaneGame() {
 
     animationRef.current = requestAnimationFrame(gameLoop)
     return () => cancelAnimationFrame(animationRef.current)
-  }, [checkCollision, endGame, recordAction])
+  }, [checkCollision, emitGameEnd])
 
   return (
     <div className="w-full h-screen flex items-center justify-center bg-black overflow-hidden select-none">

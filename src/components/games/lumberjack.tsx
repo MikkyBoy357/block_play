@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 const VISIBLE_SEGMENTS = 10
 const SEGMENT_HEIGHT = 90 
@@ -53,8 +54,10 @@ export function LumberjackGame() {
   const [fallingBranches, setFallingBranches] = useState<FallingBranch[]>([])
   const [isChopping, setIsChopping] = useState(false)
   const [timeDecreaseRate, setTimeDecreaseRate] = useState(BASE_TIME_DECREASE_RATE)
+  const { emitGameEnd } = useGameEndEmitter()
   
   const segmentIdCounter = useRef(0)
+  const scoreRef = useRef(0)
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({})
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const cutTimestamps = useRef<number[]>([])
@@ -100,6 +103,7 @@ export function LumberjackGame() {
   const handleGameOver = () => {
     playSound("hit3")
     setGameStatus("game-over")
+    emitGameEnd("lumberjack", scoreRef.current)
   }
 
   const playSound = (key: string, allowOverlap = false) => {
@@ -190,6 +194,7 @@ export function LumberjackGame() {
     
     setScore(s => {
       const newScore = s + 1
+      scoreRef.current = newScore
       
       // Calculate progressive difficulty: timer gets faster with score
       // Increases from 0.25 to 0.6 over ~100 points

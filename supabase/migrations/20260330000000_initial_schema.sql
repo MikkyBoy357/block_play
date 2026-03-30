@@ -9,7 +9,6 @@ create table if not exists public.profiles (
   username text unique,
   display_name text,
   avatar_url text,
-  bio text default '',
   subscription_tier text check (subscription_tier in ('weekly', 'monthly', 'yearly')) default null,
   subscription_expires_at timestamptz default null,
   created_at timestamptz default now(),

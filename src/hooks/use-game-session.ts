@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import type { GameSession } from "@/lib/game-session"
 import { getGameBySlug, type SubscriptionTier } from "@/lib/game-data"
 import { canEarn, recordGameEarning, getEarningsSummary } from "@/lib/earnings"
@@ -19,12 +19,13 @@ interface UseGameSessionReturn {
   error: string | null
   startGame: (gameId: string) => Promise<void>
   recordAction: (action: string) => Promise<boolean>
-  endGame: () => Promise<{ verified: boolean; finalScore: number; earning: EarningResult } | null>
+  endGame: (finalScore?: number) => Promise<{ verified: boolean; finalScore: number; earning: EarningResult } | null>
   getEarnings: (subscriptionTier: SubscriptionTier) => ReturnType<typeof getEarningsSummary>
 }
 
 export function useGameSession(): UseGameSessionReturn {
   const [session, setSession] = useState<GameSession | null>(null)
+  const sessionRef = useRef<GameSession | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,6 +45,7 @@ export function useGameSession(): UseGameSessionReturn {
       }
       
       const data = await response.json()
+      sessionRef.current = data.session
       setSession(data.session)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error")
@@ -53,32 +55,35 @@ export function useGameSession(): UseGameSessionReturn {
   }, [])
 
   const recordAction = useCallback(async (action: string): Promise<boolean> => {
-    if (!session) return false
+    const currentSession = sessionRef.current
+    if (!currentSession) return false
     
     try {
       const response = await fetch("/api/game/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session, action }),
+        body: JSON.stringify({ session: currentSession, action }),
       })
       if (!response.ok) return false
 
       const data = await response.json()
+      sessionRef.current = data.session
       setSession(data.session)
       return true
     } catch {
       return false
     }
-  }, [session])
+  }, [])
 
-  const endGame = useCallback(async () => {
-    if (!session) return null
+  const endGame = useCallback(async (clientFinalScore?: number) => {
+    const currentSession = sessionRef.current
+    if (!currentSession) return null
     
     try {
       const response = await fetch("/api/game/end", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session }),
+        body: JSON.stringify({ session: currentSession, finalScore: clientFinalScore }),
       })
       if (!response.ok) return null
 
@@ -87,7 +92,7 @@ export function useGameSession(): UseGameSessionReturn {
 
       // Server returns DB-backed earning data for logged-in users
       if (data.earned !== undefined && data.earned !== null) {
-        const game = getGameBySlug(session.gameId)
+        const game = getGameBySlug(currentSession.gameId)
         return {
           verified: data.verified,
           finalScore,
@@ -102,7 +107,7 @@ export function useGameSession(): UseGameSessionReturn {
       }
 
       // Fallback: localStorage-based earning for anonymous players
-      const game = getGameBySlug(session.gameId)
+      const game = getGameBySlug(currentSession.gameId)
       const earning: EarningResult = {
         qualified: false,
         earned: 0,
@@ -139,7 +144,7 @@ export function useGameSession(): UseGameSessionReturn {
     } catch {
       return null
     }
-  }, [session])
+  }, [])
 
   const getEarnings = useCallback((subscriptionTier: SubscriptionTier) => {
     return getEarningsSummary(subscriptionTier)

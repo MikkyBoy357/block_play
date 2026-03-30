@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
-import { useGameSession } from "@/hooks/use-game-session"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Op = "+" | "−" | "×" | "÷"
@@ -134,7 +134,7 @@ export function MathTeaserGame() {
   const animRef = useRef(0)
   const lastTickRef = useRef(0)
 
-  const { startGame, recordAction, endGame } = useGameSession()
+  const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
   // ─── High Score ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -173,9 +173,9 @@ export function MathTeaserGame() {
     scoreRef.current = 0; streakRef.current = 0; qNumRef.current = 0
     setScore(0); setStreak(0); setQuestionNum(0); setSelectedIdx(null); setLastPoints(0); setIsPerfect(false)
     sndStart()
-    await startGame("math-teaser")
+    resetEmitter()
     nextQuestion(0)
-  }, [startGame])
+  }, [resetEmitter])
 
   function nextQuestion(qNum: number) {
     const q = generateQuestion(qNum)
@@ -209,7 +209,6 @@ export function MathTeaserGame() {
       phaseRef.current = "correct"; setPhase("correct")
 
       if (perfect) sndPerfect(); else sndCorrect()
-      recordAction("correct")
 
       setTimeout(() => {
         qNumRef.current++
@@ -233,7 +232,7 @@ export function MathTeaserGame() {
       setBestStreak(streakRef.current)
       localStorage.setItem("mathteaser_bs", streakRef.current.toString())
     }
-    endGame()
+    emitGameEnd("math-teaser", scoreRef.current)
   }
 
   // ─── Cleanup ─────────────────────────────────────────────────────────────

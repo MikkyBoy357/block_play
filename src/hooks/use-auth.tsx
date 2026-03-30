@@ -17,6 +17,7 @@ export interface UserProfile {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
   subscription_tier: SubscriptionTier | null;
   subscription_expires_at: string | null;
 }
@@ -29,6 +30,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateAvatar: (avatarUrl: string) => Promise<{ error?: string }>;
+  updateProfile: (data: { username?: string; display_name?: string; bio?: string; avatar_url?: string }) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -114,9 +116,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refreshUser]
   );
 
+  const updateProfile = useCallback(
+    async (profileData: { username?: string; display_name?: string; bio?: string; avatar_url?: string }) => {
+      const res = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profileData),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error };
+      await refreshUser();
+      return {};
+    },
+    [refreshUser]
+  );
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, signUp, signIn, signOut, refreshUser, updateAvatar }}
+      value={{ user, isLoading, signUp, signIn, signOut, refreshUser, updateAvatar, updateProfile }}
     >
       {children}
     </AuthContext.Provider>

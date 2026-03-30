@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 // ─── Constants ───────────────────────────────────────────────────
 const GAME_WIDTH = 400
@@ -89,6 +90,7 @@ export function GravityRunGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animRef = useRef<number>(0)
   const lastTimeRef = useRef<number>(0)
+  const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
   const [gameState, setGameState] = useState<GameState>("idle")
   const [score, setScore] = useState(0)
@@ -316,7 +318,8 @@ export function GravityRunGame() {
     gameStateRef.current = "playing"
     setGameState("playing")
     lastTimeRef.current = 0
-  }, [initTerrain, initClouds])
+    resetEmitter()
+  }, [initTerrain, initClouds, resetEmitter])
 
   // ─── Handle tap/click ───────────────────────────────────────────
   const handleTap = useCallback(() => {
@@ -853,6 +856,7 @@ export function GravityRunGame() {
         if (playerYRef.current > GAME_HEIGHT + PLAYER_SIZE || playerYRef.current < -PLAYER_SIZE * 2) {
           gameStateRef.current = "gameover"
           setGameState("gameover")
+          emitGameEnd("gravity-run", scoreRef.current)
           playDeathSound()
           const finalScore = scoreRef.current
           if (finalScore > highScore) {
@@ -892,6 +896,7 @@ export function GravityRunGame() {
         if (checkCollision()) {
           gameStateRef.current = "gameover"
           setGameState("gameover")
+          emitGameEnd("gravity-run", scoreRef.current)
           playDeathSound()
           const finalScore = scoreRef.current
           if (finalScore > highScore) {
