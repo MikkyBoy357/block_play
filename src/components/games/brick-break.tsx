@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
-import { useGameSession } from "@/hooks/use-game-session"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const WIDTH = 360
@@ -159,7 +159,7 @@ export function BrickBreakGame() {
   const mouseXRef = useRef(WIDTH / 2)
   const useMouseRef = useRef(false)
 
-  const { startGame, recordAction, endGame } = useGameSession()
+  const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
   const ballSpeed = (lvl: number) => Math.min(BASE_BALL_SPEED + (lvl - 1) * SPEED_PER_LEVEL, MAX_SPEED)
@@ -209,8 +209,8 @@ export function BrickBreakGame() {
     setScore(0); setLives(3); setLevel(1)
     initLevel(1)
     phaseRef.current = "launch"; setGamePhase("launch")
-    await startGame("brick-break")
-  }, [initLevel, startGame])
+    resetEmitter()
+  }, [initLevel, resetEmitter])
 
   // ─── Input ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -318,8 +318,7 @@ export function BrickBreakGame() {
 
     spawnCapsule(brick.x + BRICK_W / 2, brick.y + BRICK_H / 2, levelRef.current)
     bricksRef.current.splice(idx, 1)
-    recordAction("brick")
-  }, [spawnCapsule, recordAction])
+  }, [spawnCapsule])
 
   // ─── Draw helpers ────────────────────────────────────────────────────────
   const drawHUD = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -420,7 +419,7 @@ export function BrickBreakGame() {
           phaseRef.current = "gameover"; setGamePhase("gameover")
           sndGameOver()
           if (scoreRef.current > highScore) { setHighScore(scoreRef.current); localStorage.setItem("brickbreak_hs", scoreRef.current.toString()) }
-          endGame()
+          emitGameEnd("brick-break", scoreRef.current)
         } else {
           paddleRef.current.x = WIDTH / 2; paddleRef.current.w = PADDLE_INIT_W
           paddleRef.current.catch = false; paddleRef.current.catchTimer = 0
@@ -594,7 +593,6 @@ export function BrickBreakGame() {
               case "W": pad.floorTimer = 10000; break
             }
           }
-          recordAction("powerup")
         }
       }
 
@@ -607,7 +605,6 @@ export function BrickBreakGame() {
         levelRef.current++; setLevel(levelRef.current)
         const bonus = levelRef.current * 500
         scoreRef.current += bonus; setScore(scoreRef.current)
-        recordAction("level")
         initLevel(levelRef.current)
         phaseRef.current = "launch"; setGamePhase("launch")
       }
@@ -674,7 +671,7 @@ export function BrickBreakGame() {
     }
 
     animRef.current = requestAnimationFrame(gameLoop)
-  }, [highScore, endGame, recordAction, initLevel, newBall, drawHUD, drawBrick, destroyBrickAt])
+  }, [highScore, emitGameEnd, initLevel, newBall, drawHUD, drawBrick, destroyBrickAt])
 
   // ─── Start loop ──────────────────────────────────────────────────────────
   useEffect(() => {

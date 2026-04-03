@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
-import { useGameSession } from "@/hooks/use-game-session"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 // ─── Grid Constants ──────────────────────────────────────────────────────────
 const CELL = 20
@@ -222,7 +222,7 @@ export function PacmanGame() {
   // Audio context
   const audioCtxRef = useRef<AudioContext | null>(null)
 
-  const { startGame, recordAction, endGame } = useGameSession()
+  const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
   // ─── Audio Context ───────────────────────────────────────────────────────
   const getAudioCtx = useCallback(() => {
@@ -969,8 +969,8 @@ export function PacmanGame() {
     phaseRef.current = "ready"
     setGamePhase("ready")
     playIntro()
-    await startGame("pacman")
-  }, [initMaze, initPacman, initGhosts, playIntro, startGame, stopSiren, stopFrightenedSiren])
+    resetEmitter()
+  }, [initMaze, initPacman, initGhosts, playIntro, resetEmitter, stopSiren, stopFrightenedSiren])
 
   // ─── Drawing Functions ───────────────────────────────────────────────────
   const drawMaze = useCallback((ctx: CanvasRenderingContext2D, flash = false) => {
@@ -1237,7 +1237,7 @@ export function PacmanGame() {
             setHighScore(final)
             localStorage.setItem("pacman_highScore", final.toString())
           }
-          endGame()
+          emitGameEnd("pacman", scoreRef.current)
         } else {
           resetPositions()
           readyTimerRef.current = 2000
@@ -1343,7 +1343,6 @@ export function PacmanGame() {
           setScore(scoreRef.current)
           playWaka()
           updateSirenPitch()
-          recordAction("dot")
         } else if (cell === 3) {
           mazeRef.current[row][col] = 0
           scoreRef.current += 50
@@ -1352,7 +1351,6 @@ export function PacmanGame() {
           ghostScoreMultiplier.current = 1
           setScore(scoreRef.current)
           playPowerPellet()
-          recordAction("power")
 
           if (spec.frightTime > 0) {
             if (frightenedTimerRef.current) clearTimeout(frightenedTimerRef.current)
@@ -1432,7 +1430,6 @@ export function PacmanGame() {
             x: fx, y: fy, text: `${fruitRef.current.score}`,
             time: Date.now(), color: "#fff",
           })
-          recordAction("fruit")
           fruitRef.current = null
         }
       }
@@ -1463,7 +1460,6 @@ export function PacmanGame() {
               x: ghost.pos.x, y: ghost.pos.y, text: `${pts}`,
               time: Date.now(), color: "#00ffff",
             })
-            recordAction("ghost")
           } else if (ghost.mode !== "eyes") {
             stopSiren()
             stopFrightenedSiren()
@@ -1499,7 +1495,7 @@ export function PacmanGame() {
     canMoveEntity, snapToGrid, moveGhost, drawMaze, drawDots, drawPacman, drawGhost, drawFruit, drawPopups,
     playWaka, playPowerPellet, playEatGhost, playDeath, playLevelComplete, playEatFruit, playExtraLife,
     startSiren, stopSiren, updateSirenPitch, startFrightenedSiren, stopFrightenedSiren, getAudioCtx,
-    initMaze, resetPositions, recordAction, endGame, highScore,
+    initMaze, resetPositions, emitGameEnd, highScore,
   ])
 
   // ─── Start/Stop Loop ────────────────────────────────────────────────────

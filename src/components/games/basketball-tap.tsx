@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState, useCallback } from "react"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 type GameState = "menu" | "playing" | "gameover"
 
@@ -54,6 +55,7 @@ export function BasketballTapGame() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const animRef = useRef<number>(0)
     const lastTimeRef = useRef<number>(0)
+    const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
     // Ball state
     const ballXRef = useRef(0)
@@ -381,7 +383,8 @@ export function BasketballTapGame() {
         streakRef.current = 0
         setStreak(0)
         setGameState("playing")
-    }, [canvasSize, resetBall, initNet])
+        resetEmitter()
+    }, [canvasSize, resetBall, initNet, resetEmitter])
 
     // ─── Swipe handling ───
     const handlePointerDown = useCallback((clientX: number, clientY: number) => {
@@ -733,6 +736,7 @@ export function BasketballTapGame() {
                                     localStorage.setItem("basketballTap_highScore", String(scoreRef.current))
                                 }
                                 setGameState("gameover")
+                                emitGameEnd("basketball-tap", scoreRef.current)
                             }
                         }
                         resetBall(w, h)

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState, useCallback } from "react"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 type Difficulty = "easy" | "medium" | "hard"
 type GameState = "menu" | "playing" | "paused" | "scored" | "gameover"
@@ -74,6 +75,7 @@ export function AirHockeyGame() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const animRef = useRef<number>(0)
     const lastTimeRef = useRef<number>(0)
+    const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
     const puckRef = useRef<Puck>({ x: 0, y: 0, vx: 0, vy: 0, radius: PUCK_RADIUS })
     const playerRef = useRef<Paddle>({ x: 0, y: 0, radius: PADDLE_RADIUS, vx: 0, vy: 0 })
@@ -267,7 +269,8 @@ export function AirHockeyGame() {
         const canvas = canvasRef.current
         if (canvas) resetPositions(canvas.width, canvas.height)
         setGameState("playing")
-    }, [resetPositions])
+        resetEmitter()
+    }, [resetPositions, resetEmitter])
 
     // Canvas sizing
     useEffect(() => {
@@ -499,9 +502,11 @@ export function AirHockeyGame() {
                         // Check winner
                         if (playerScoreRef.current >= WINNING_SCORE) {
                             setGameState("gameover")
+                            emitGameEnd("air-hockey", playerScoreRef.current)
                             playWinSound()
                         } else if (cpuScoreRef.current >= WINNING_SCORE) {
                             setGameState("gameover")
+                            emitGameEnd("air-hockey", playerScoreRef.current)
                             playLoseSound()
                         }
                     }

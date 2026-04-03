@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { ArrowLeft, Play, RotateCcw, Pause, Trophy, Zap } from "lucide-react"
 import Link from "next/link"
-import { useGameSession } from "@/hooks/use-game-session"
+import { useGameEndEmitter } from "@/hooks/use-game-events"
 
 const COLS = 10
 const ROWS = 20
@@ -106,7 +106,7 @@ export function TetrisGame() {
   const [gameState, setGameState] = useState<GameState>("idle")
   const [linesCleared, setLinesCleared] = useState<number[]>([])
 
-  const { startGame, endGame } = useGameSession()
+  const { emitGameEnd, resetEmitter } = useGameEndEmitter()
 
   // Audio
   const audioCtxRef = useRef<AudioContext | null>(null)
@@ -246,9 +246,9 @@ export function TetrisGame() {
       gameStateRef.current = "gameover"
       setGameState("gameover")
       playGameOverSound()
-      endGame()
+      emitGameEnd("tetris", scoreRef.current)
     }
-  }, [collides, endGame, playGameOverSound, addGarbageRow])
+  }, [collides, emitGameEnd, playGameOverSound, addGarbageRow])
 
   const moveDown = useCallback(() => {
     const piece = currentPieceRef.current
@@ -585,10 +585,10 @@ export function TetrisGame() {
     setLinesCleared([])
     gameStateRef.current = "playing"
     setGameState("playing")
-    startGame("tetris")
+    resetEmitter()
     cancelAnimationFrame(gameLoopRef.current)
     gameLoopRef.current = requestAnimationFrame(gameLoop)
-  }, [gameLoop, startGame])
+  }, [gameLoop, resetEmitter])
 
   const togglePause = useCallback(() => {
     if (gameStateRef.current === "playing") {

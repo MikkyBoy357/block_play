@@ -1,14 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Trophy, Medal, Crown, TrendingUp, Flame, Star, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSound } from "@/hooks/use-sound"
+import { createClient } from "@/utils/supabase/client"
+import { useAuth } from "@/hooks/use-auth"
 
 type TimeFilter = "daily" | "weekly" | "alltime"
 type GameFilter = "all" | string
 
-const mockLeaderboard = [
+interface LeaderboardEntry {
+  rank: number
+  name: string
+  avatar: string
+  country: string
+  score: number
+  streak: number
+  game: string
+  prize: string
+  tier: string
+}
+
+const mockLeaderboard: LeaderboardEntry[] = [
   { rank: 1, name: "NinjaGamer_99", avatar: "🥷", country: "🇯🇵", score: 248500, streak: 14, game: "Tetris", prize: "$500", tier: "diamond" },
   { rank: 2, name: "PixelQueen", avatar: "👑", country: "🇰🇷", score: 231200, streak: 11, game: "Pac-Man", prize: "$350", tier: "diamond" },
   { rank: 3, name: "RetroKing_X", avatar: "🎮", country: "🇺🇸", score: 219800, streak: 9, game: "Brick Break", prize: "$200", tier: "platinum" },
@@ -29,6 +43,13 @@ const gameFilters = [
   { id: "glow-snake", label: "Snake" },
   { id: "brick-break", label: "Brick Break" },
   { id: "math-teaser", label: "Math Teaser" },
+  { id: "football-tap", label: "Football Tap" },
+  { id: "basketball-tap", label: "Basketball Tap" },
+  { id: "lumberjack", label: "Lumberjack" },
+  { id: "flag-quiz", label: "Flag Quiz" },
+  { id: "gravity-run", label: "Gravity Run" },
+  { id: "air-hockey", label: "Air Hockey" },
+  { id: "crossy-road", label: "Crossy Road" },
 ]
 
 const tierColors: Record<string, string> = {
@@ -48,7 +69,86 @@ function getRankDisplay(rank: number) {
 export function LeaderboardSection() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("weekly")
   const [gameFilter, setGameFilter] = useState<GameFilter>("all")
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(mockLeaderboard)
   const { playHover, playClick } = useSound()
+  const { user } = useAuth()
+
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const supabase = createClient()
+
+        // Build query for game_sessions with profile join
+        let query = supabase
+          .from("game_sessions")
+          .select("game_slug, score, earned, created_at, user_id, profiles!inner(username, display_name, avatar_url)")
+          .order("score", { ascending: false })
+          .limit(50)
+
+        // Time filter
+        const now = new Date()
+        if (timeFilter === "daily") {
+          const today = new Date(now)
+          today.setHours(0, 0, 0, 0)
+          query = query.gte("created_at", today.toISOString())
+        } else if (timeFilter === "weekly") {
+          const day = now.getDay()
+          const diff = day === 0 ? 6 : day - 1
+          const monday = new Date(now)
+          monday.setDate(now.getDate() - diff)
+          monday.setHours(0, 0, 0, 0)
+          query = query.gte("created_at", monday.toISOString())
+        }
+
+        // Game filter
+        if (gameFilter !== "all") {
+          query = query.eq("game_slug", gameFilter)
+        }
+
+        const { data } = await query
+
+        if (data && data.length > 0) {
+          // Deduplicate: keep only each user's best score per game
+          const bestByUser = new Map<string, typeof data[number]>()
+          for (const row of data) {
+            const key = `${row.user_id}-${row.game_slug}`
+            const existing = bestByUser.get(key)
+            if (!existing || row.score > existing.score) {
+              bestByUser.set(key, row)
+            }
+          }
+
+          const sorted = [...bestByUser.values()].sort((a, b) => b.score - a.score).slice(0, 10)
+
+          const tierForRank = (r: number) => r <= 2 ? "diamond" : r <= 4 ? "platinum" : r <= 7 ? "gold" : "silver"
+          const avatars = ["🥷", "👑", "🎮", "⚡", "🌟", "🧠", "🐍", "🧊", "🏴", "🚀"]
+
+          const entries: LeaderboardEntry[] = sorted.map((row, i) => {
+            const profile = row.profiles as unknown as { username: string | null; display_name: string | null }
+            return {
+              rank: i + 1,
+              name: profile?.username ?? profile?.display_name ?? "Anonymous",
+              avatar: avatars[i % avatars.length],
+              country: "",
+              score: row.score,
+              streak: 0,
+              game: row.game_slug,
+              prize: row.earned > 0 ? `$${Number(row.earned).toFixed(2)}` : "-",
+              tier: tierForRank(i + 1),
+            }
+          })
+          setLeaderboard(entries)
+        } else {
+          setLeaderboard(mockLeaderboard)
+        }
+      } catch {
+        // Fallback to mock on any error
+        setLeaderboard(mockLeaderboard)
+      }
+    }
+
+    fetchLeaderboard()
+  }, [timeFilter, gameFilter])
 
   return (
     <section id="leaderboard" className="py-16 md:py-24 px-4 relative">
@@ -124,7 +224,7 @@ export function LeaderboardSection() {
           </div>
 
           {/* Rows */}
-          {mockLeaderboard.map((player, i) => {
+          {leaderboard.map((player, i) => {
             const rankInfo = getRankDisplay(player.rank)
             return (
               <div
@@ -191,15 +291,28 @@ export function LeaderboardSection() {
                 🎯
               </div>
               <div>
-                <div className="text-sm font-semibold text-foreground">Your Position: <span className="text-primary">#--</span></div>
-                <div className="text-xs text-muted-foreground">Subscribe to start competing</div>
+                {user ? (
+                  <>
+                    <div className="text-sm font-semibold text-foreground">
+                      {user.username ?? user.email} — <span className="text-primary">Playing</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">Keep competing to climb the ranks</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-sm font-semibold text-foreground">Your Position: <span className="text-primary">#--</span></div>
+                    <div className="text-xs text-muted-foreground">Subscribe to start competing</div>
+                  </>
+                )}
               </div>
             </div>
+            {!user && (
             <a href="#pricing">
               <Button size="sm" className="bg-primary text-primary-foreground gap-1 text-xs">
                 Join Now <ChevronRight className="w-3 h-3" />
               </Button>
             </a>
+            )}
           </div>
         </div>
       </div>

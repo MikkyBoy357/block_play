@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Sparkles, Zap, Trophy, DollarSign, Users, Crown, ArrowRight, Gamepad2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const words = ["Play", "Compete", "Win", "Cash Out"]
-const liveWinners = [
+const fakeLiveWinners = [
   { name: "Alex K.", game: "Tetris", prize: "$120", flag: "🇺🇸" },
   { name: "Yuki T.", game: "Pac-Man", prize: "$85", flag: "🇯🇵" },
   { name: "Priya S.", game: "Snake", prize: "$200", flag: "🇮🇳" },
@@ -14,10 +14,60 @@ const liveWinners = [
   { name: "Emma L.", game: "Basketball", prize: "$95", flag: "🇬🇧" },
 ]
 
+const flagEmojis = ["🇺🇸", "🇬🇧", "🇳🇬", "🇧🇷", "🇯🇵", "🇩🇪", "🇫🇷", "🇮🇳", "🇰🇷", "🇦🇺", "🇨🇦", "🇲🇽"]
+
+interface WinnerDisplay {
+  name: string
+  game: string
+  prize: string
+  flag: string
+}
+
 export function WelcomeHero() {
   const [currentWord, setCurrentWord] = useState(0)
   const [isVisible, setIsVisible] = useState(true)
   const [winnerIndex, setWinnerIndex] = useState(0)
+  const [winners, setWinners] = useState<WinnerDisplay[]>(fakeLiveWinners)
+  const fetchedRef = useRef(false)
+
+  // Fetch real winners and mix with fakes
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    async function loadRealWinners() {
+      try {
+        const res = await fetch("/api/game/activity")
+        if (!res.ok) return
+        const data = await res.json()
+        const realWinners: Array<{
+          username: string
+          display_name: string
+          game_slug: string
+          earned: number
+          score: number
+        }> = data.recentWinners ?? []
+
+        if (realWinners.length === 0) return
+
+        const realFormatted: WinnerDisplay[] = realWinners.slice(0, 10).map((w) => ({
+          name: (w.username ?? w.display_name ?? "Player").slice(0, 12),
+          game: w.game_slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          prize: `$${Number(w.earned).toFixed(2)}`,
+          flag: flagEmojis[Math.floor(Math.random() * flagEmojis.length)],
+        }))
+
+        // Interleave real and fake: real, fake, real, fake...
+        const mixed: WinnerDisplay[] = []
+        const maxLen = Math.max(realFormatted.length, fakeLiveWinners.length)
+        for (let i = 0; i < maxLen; i++) {
+          if (i < realFormatted.length) mixed.push(realFormatted[i])
+          if (i < fakeLiveWinners.length) mixed.push(fakeLiveWinners[i])
+        }
+        setWinners(mixed)
+      } catch { /* keep fakes */ }
+    }
+    loadRealWinners()
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -32,12 +82,12 @@ export function WelcomeHero() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setWinnerIndex((prev) => (prev + 1) % liveWinners.length)
+      setWinnerIndex((prev) => (prev + 1) % winners.length)
     }, 3000)
     return () => clearInterval(interval)
-  }, [])
+  }, [winners.length])
 
-  const currentWinner = liveWinners[winnerIndex]
+  const currentWinner = winners[winnerIndex]
 
   return (
     <section className="pt-24 pb-8 md:pt-32 md:pb-16 px-4 relative">
